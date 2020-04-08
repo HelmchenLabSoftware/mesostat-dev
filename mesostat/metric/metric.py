@@ -102,11 +102,10 @@ class MetricCalculator:
 
                 # 2. Transpose s.t. target goes immediately after source
                 # Note: Sources and targets are always last, so it suffices to put targets last
-                
-
-                pass
+                dimSeq = list(range(result.ndim))
+                dimSeq = dimSeq[:idxTrgDim] + dimSeq[idxTrgDim+1:] + [dimSeq[idxTrgDim]]
+                return result.transpose(tuple(dimSeq))
         return result
-
 
     def metric3D(self, metricName, dimOrderTrg, metricSettings=None, sweepSettings=None):
         '''
@@ -130,4 +129,4 @@ class MetricCalculator:
         sweepGen = SweepGenerator(self.data, self.dimOrderSrc, dimOrderTrg, timeWindow=self.timeWindow, settingsSweep=sweepSettings)
         rez = sweepGen.unpack(self.mapper.mapMultiArg(wrappedFunc, sweepGen.iterator()))
 
-        return rez
+        return self._postprocess(rez, metricName, metricSettings, sweepSettings)

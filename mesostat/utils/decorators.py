@@ -1,5 +1,5 @@
 import multiprocessing
-import jpype as jp
+# import jpype as jp
 import sys
 
 from mesostat.utils.system import time_now_as_str, mem_now_as_str
@@ -11,37 +11,37 @@ from mesostat.utils.system import time_now_as_str, mem_now_as_str
 #         print("Had to shut down JVM")
 #     return 0
 
-
-def jpype_sync_thread(func):
-    '''
-    :param   func:  A thread function that may be using jpype
-    :return: decorator for that function
-
-    Purpose is to avoid memory leaks by synchronizing python threads with JAVA
-    '''
-
-    def attach_thread(*args, **kwargs):
-        if jp.isJVMStarted():
-            if jp.isThreadAttachedToJVM():
-                print("This Thread is already attached")
-            else:
-                print("Attaching Thread")
-                jp.attachThreadToJVM()
-
-        rez = func(*args, **kwargs)
-
-        if jp.isJVMStarted():
-            if jp.isThreadAttachedToJVM():
-                print("Detaching Thread")
-                jp.detachThreadFromJVM()
-            else:
-                print("This thread was never attached")
-
-            #jp.shutdownJVM()
-
-        return rez
-
-    return attach_thread
+#
+# def jpype_sync_thread(func):
+#     '''
+#     :param   func:  A thread function that may be using jpype
+#     :return: decorator for that function
+#
+#     Purpose is to avoid memory leaks by synchronizing python threads with JAVA
+#     '''
+#
+#     def attach_thread(*args, **kwargs):
+#         if jp.isJVMStarted():
+#             if jp.isThreadAttachedToJVM():
+#                 print("This Thread is already attached")
+#             else:
+#                 print("Attaching Thread")
+#                 jp.attachThreadToJVM()
+#
+#         rez = func(*args, **kwargs)
+#
+#         if jp.isJVMStarted():
+#             if jp.isThreadAttachedToJVM():
+#                 print("Detaching Thread")
+#                 jp.detachThreadFromJVM()
+#             else:
+#                 print("This thread was never attached")
+#
+#             #jp.shutdownJVM()
+#
+#         return rez
+#
+#     return attach_thread
 
 
 def redirect_stdout(func):
