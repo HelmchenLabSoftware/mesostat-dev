@@ -87,7 +87,7 @@ def parse_results_network(results, nNode, method):
 # Returns shape [3 x nSource] for one given target. 3 means [FC, lag, p]
 #@jpype_sync_thread
 @redirect_stdout
-def analyse_single_target(iTrg, method, data, settings):
+def idtxl_single_target(iTrg, method, data, settings):
     # Convert data to IDTxl Format
     dataIDTxl = Data(data, dim_order=settings['dim_order'])
 
@@ -108,7 +108,7 @@ def analyse_single_target(iTrg, method, data, settings):
 # Returns shape [3 x nSource x nTarget] for one given target. 3 means [FC, lag, p]
 #@jpype_sync_thread
 @redirect_stdout
-def analyse_network(method, data, settings):
+def idtxl_network(method, data, settings):
     # Convert data to IDTxl Format
     dataIDTxl = Data(data, dim_order=settings['dim_order'])
 

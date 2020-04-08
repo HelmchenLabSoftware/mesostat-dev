@@ -4,6 +4,7 @@ import scipy.stats
 from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim
 from mesostat.stat.connectomics import offdiag_1D
 
+
 # p-value of a single correlation between two scalar variables
 # Null hypothesis: Both variables are standard normal variables
 # Problem 1: When evaluating corr matrix, not clear how to Bonferroni-correct, because matrix entries are not independent
@@ -12,6 +13,7 @@ def corr_significance(c, nData):
     t = c * np.sqrt((nData - 2) / (1 - c**2))
     t[t == np.nan] = np.inf
     return scipy.stats.t(nData).pdf(t)
+
 
 # Correlation. Requires leading dimension to be channels
 # If y2D not specified, correlation computed between channels of x
@@ -35,23 +37,25 @@ def corr_2D(x2D, y2D=None, est='corr'):
 
 
 # If data has trials, concatenate trials into single timeline when computing correlation
-def corr_3D(data, settings, est='corr'):
+def corr_3D(data, settings):
     # Convert to canonical form
     test_have_dim("corr3D", settings['dim_order'], "p")
     dataCanon = numpy_transpose_byorder(data, settings['dim_order'], 'psr', augment=True)
     dataFlat = numpy_merge_dimensions(dataCanon, 1, 3)
+
+    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
     return corr_2D(dataFlat, est=est)
 
 
 # Compute average absolute value off-diagonal correlation (synchr. coeff)
-def avg_corr_3D(data, settings, est='corr'):
-    M = corr_3D(data, settings, est=est)
+def avg_corr_3D(data, settings):
+    M = corr_3D(data, settings)
     return np.nanmean(np.abs(offdiag_1D(M)))
 
 
 # FIXME: Correct all TE-based procedures, to compute cross-correlation as a window sweep externally
 # FIXME: Adapt all TE-based procedures to use 1 lag at a time, or redefine extra procedure to use multiple lags
-def cross_corr_3D(data, settings, est='corr'):
+def cross_corr_3D(data, settings):
     '''
     Compute cross-correlation of multivariate dataset for a fixed lag
 
@@ -81,10 +85,11 @@ def cross_corr_3D(data, settings, est='corr'):
     yy = numpy_merge_dimensions(dataOrd[:, :nTime-lag], 1, 3)
 
     # Only interested in x-y correlations, crop x-x and y-y
+    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
     return corr_2D(xx, yy, est=est)[nNode:, :nNode]
 
 
-def cross_corr_non_uniform_3D(dataLst, settings, est='corr'):
+def cross_corr_non_uniform_3D(dataLst, settings):
     '''
     Compute cross-correlation of multivariate dataset for a fixed lag
 
@@ -114,6 +119,7 @@ def cross_corr_non_uniform_3D(dataLst, settings, est='corr'):
     yy = np.hstack([data[:, :-lag] for data in dataOrdLst])
 
     # Only interested in x-y correlations, crop x-x and y-y
+    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
     return corr_2D(xx, yy, est=est)[nNode:, :nNode]
 
 

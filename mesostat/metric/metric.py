@@ -7,6 +7,7 @@ from mesostat.metric.npeet import average_entropy, average_predictive_info
 from mesostat.metric.autoregression import ar1_coeff, ar1_testerr, ar_testerr
 from mesostat.metric.stretch import stretch_basis_projection
 from mesostat.metric.sequence import cumul_ord_3D, avg_cumul_ord_3D
+from mesostat.metric.idtxl import idtxl_single_target, idtxl_network
 
 from mesostat.utils.sweep import SweepGenerator
 from mesostat.utils.parallel import GenericMapper
@@ -33,6 +34,10 @@ class MetricCalculator:
             "autocorr":             autocorr_3D,
             "corr":                 corr_3D,
             "crosscorr":            cross_corr_3D,
+            "BivariateMI":          lambda data, settings : self._TE("BivariateMI", data, settings),
+            "BivariateTE":          lambda data, settings: self._TE("BivariateTE", data, settings),
+            "MultivariateMI":       lambda data, settings: self._TE("MultivariateMI", data, settings),
+            "MultivariateTE":       lambda data, settings: self._TE("MultivariateTE", data, settings),
             "autocorr_d1":          autocorr_d1_3D,
             "ar1_coeff":            ar1_coeff,
             "ar1_testerr":          ar1_testerr,
@@ -64,9 +69,44 @@ class MetricCalculator:
     def _nanstd(self, data, settings):
         return np.nanstd(data)
 
+    def _TE(self, method, data, settings):
+        if settings["parallelTrg"]:
+            return idtxl_single_target(settings["iTrg"], method, data, settings)
+        else:
+            return idtxl_network(method, data, settings)
+
     # Metric defined by user
     def _generic_metric(self, data, settings):
         return settings["metric"](data, settings)
+
+    def _preprocess(self, metricName, metricSettings, sweepSettings):
+        # Wrapper for IDTxl - allow to parallelize over targets
+        useIDTxl = ("Bivariate" in metricName) or ("Multivatiate" in metricName)
+        if useIDTxl:
+            if metricSettings["parallelTrg"]:
+                if sweepSettings is None:
+                    sweepSettings = {}
+                sweepSettings["iTrg"] = np.arange(self.data.shape[self.dimOrderSrc.index("p")]).astype(int)
+        return sweepSettings
+
+    def _postprocess(self, result, metricName, metricSettings, sweepSettings):
+        # Wrapper for IDTxl - allow to parallelize over targets
+        useIDTxl = ("Bivariate" in metricName) or ("Multivatiate" in metricName)
+        if useIDTxl:
+            if metricSettings["parallelTrg"]:
+                # 1. Find the dimOrder of the target sweep
+                assert "iTrg" in sweepSettings.keys()
+                idxTrgDim = list(sweepSettings.keys()).index("iTrg")
+                if self.timeWindow is not None:
+                    idxTrgDim += 1   # Window sweep happens before target sweep
+
+                # 2. Transpose s.t. target goes immediately after source
+                # Note: Sources and targets are always last, so it suffices to put targets last
+                
+
+                pass
+        return result
+
 
     def metric3D(self, metricName, dimOrderTrg, metricSettings=None, sweepSettings=None):
         '''
@@ -78,6 +118,9 @@ class MetricCalculator:
         :return:
         '''
 
+        # Preprocess sweep settings, in case some metrics need internal parallelization
+        sweepSettings = self._preprocess(metricName, metricSettings, sweepSettings)
+
         # Pass additional fixed settings to the metric function
         if metricSettings is None:
             metricSettings = {}
@@ -85,5 +128,6 @@ class MetricCalculator:
         wrappedFunc = lambda data, settings: metricFunc(data, {**settings, **metricSettings})
 
         sweepGen = SweepGenerator(self.data, self.dimOrderSrc, dimOrderTrg, timeWindow=self.timeWindow, settingsSweep=sweepSettings)
+        rez = sweepGen.unpack(self.mapper.mapMultiArg(wrappedFunc, sweepGen.iterator()))
 
-        return sweepGen.unpack(self.mapper.mapMultiArg(wrappedFunc, sweepGen.iterator()))
+        return rez

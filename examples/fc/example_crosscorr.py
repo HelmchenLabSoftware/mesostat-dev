@@ -1,11 +1,11 @@
 # import standard libraries
-import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-# import mesostat
-from mesostat.metric.corr import cross_corr_3D
+from mesostat.metric.metric import MetricCalculator
 from mesostat.utils.plotting import plot_matrix
+
+mc = MetricCalculator(serial=True, verbose=True)
 
 '''
    Test 1:
@@ -15,35 +15,29 @@ from mesostat.utils.plotting import plot_matrix
      * If shift > max_delay, corr ~ 0, delay = rand
      * Delay is the same for all diagonals, because we compare essentially the same data, both cycled by the same amount
 '''
-    
+
 nNode = 5
 nData = 1000
-settings = {
-    'min_lag_sources' : 1,
-    'max_lag_sources' : 2,
-    'dim_order'       : 'ps'
-}
-
-#data = np.random.uniform(0, 1, nNode*nData).reshape((nNode, nData))
-# Generate progressively more random data
 data = np.zeros((nNode, nData))
 data[0] = np.random.normal(0, 1, nData)
 for i in range(1, nNode):
     data[i] = np.hstack((data[i-1][1:], data[i-1][0]))
 
-rezCorr = cross_corr_3D(data, settings, est='corr')
-rezSpr = cross_corr_3D(data, settings, est='spr')
+mc.set_data(data, 'ps')
+sweepSettings = {"lag" : [1,2]}
+rezCorr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "corr"}, sweepSettings=sweepSettings)
+rezSpr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "spr"}, sweepSettings=sweepSettings)
+rezTot = np.concatenate([rezCorr, rezSpr], axis=0)
 
-compose = lambda lst1, lst2: [a + "_" + b for a in lst1 for b in lst2]
-
-plot_matrix(
-    "Test 1: Channels are shifts of the same data",
-    (2, 3),
-    [*rezCorr, *rezSpr],
-    np.array(compose(["corr", "spr"], ["val", "lag", "p"])),
-    lims = [[-1, 1], [0, settings['max_lag_sources']], [0, 1]]*2,
-    draw = True
+fig, ax = plot_matrix(rezTot, (2, 2),
+    xlabels=["corr", "spr"],
+    ylabels=["lag="+str(i) for i in sweepSettings["lag"]],
+    lims = [[-1, 1]]*len(rezTot),
+    title="Test 1: Channels are shifts of the same data",
+    haveColorBar=True
 )
+
+plt.draw()
 
 
 '''
@@ -56,28 +50,25 @@ plot_matrix(
 
 nNode = 5
 nData = 1000
-settings = {
-    'min_lag_sources' : 0,
-    'max_lag_sources' : 0,
-    'dim_order'       : 'ps'
-}
 alpha = 0.5
 
 data = np.random.normal(0, 1, (nNode, nData))
 for i in range(1, nNode):
     data[i] = data[i-1] * np.sqrt(1 - alpha) + np.random.normal(0, 1, nData) * np.sqrt(alpha)
 
-rezCorr = cross_corr_3D(data, settings, est='corr')
-rezSpr  = cross_corr_3D(data, settings, est='spr')
+mc.set_data(data, 'ps')
+rezCorr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "corr", "lag" : 0})
+rezSpr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "spr", "lag" : 0})
+rezTot = np.array([rezCorr, rezSpr])
 
-plot_matrix(
-    "Test 2: Channels are same, but progressively more noisy",
-    (2, 3),
-    [*rezCorr, *rezSpr],
-    np.array(compose(["corr", "spr"], ["val", "lag", "p"])),
-    lims = [[-1, 1], [0, settings['max_lag_sources']], [0, 1]]*2,
-    draw = True
+fig, ax = plot_matrix(rezTot, (1, 2),
+    xlabels=["corr", "spr"],
+    lims = [[-1, 1]]*len(rezTot),
+    title="Test 2: Channels are same, but progressively more noisy",
+    haveColorBar=True
 )
+
+plt.draw()
 
 
 '''
@@ -88,28 +79,27 @@ plot_matrix(
 '''
 
 nNode = 5
-lagTrue = 6
-settings = {
-    'min_lag_sources' : 1,
-    'max_lag_sources' : 6,
-    'dim_order'       : 'rsp'
-}
-nData = settings['max_lag_sources']+1
+maxLag = 6
+lagTrue = 4
+nData = maxLag + 1
 nTrial = 200
 
 data = np.random.normal(0, 1, (nTrial,nData,nNode))
-data[0, lagTrue:, :] = data[3, :-lagTrue, :]
+data[:, lagTrue:, 0] = data[:, :-lagTrue, 3]
 
-rezCorr = cross_corr_3D(data, settings, est='corr')
-rezSpr  = cross_corr_3D(data, settings, est='spr')
+mc.set_data(data, 'rsp')
+sweepSettings = {"lag" : np.arange(1, maxLag+1).astype(int)}
+rezCorr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "corr"}, sweepSettings=sweepSettings)
+rezSpr = mc.metric3D("crosscorr", "", metricSettings={"estimator" : "spr"}, sweepSettings=sweepSettings)
+rezTot = np.concatenate([rezCorr, rezSpr], axis=0)
 
-plot_matrix(
-    "Test 3: Random trial-based cross-correlation",
-    (2, 3),
-    [*rezCorr, *rezSpr],
-    np.array(compose(["corr", "spr"], ["val", "lag", "p"])),
-    lims = [[-1, 1], [0, settings['max_lag_sources']], [0, 1]]*2,
-    draw = True
+fig, ax = plot_matrix(rezTot, (2, len(sweepSettings['lag'])),
+    ylabels=["corr", "spr"],
+    xlabels=["lag="+str(i) for i in sweepSettings["lag"]],
+    lims = [[-1, 1]]*len(rezTot),
+    title=    "Test 3: Random trial-based cross-correlation",
+    haveColorBar=True
 )
 
+plt.draw()
 plt.show()
