@@ -42,6 +42,14 @@ def test_have_dim(task, dimOrd, trgDim):
         raise ValueError(task, "requires", dimNameDict[trgDim], "dimension; have", dimOrd)
 
 
+# Test that along a given dimension all shapes are equal
+def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
+    if dimEqual in dataDimOrder:
+        idxSample = dataDimOrder.index(dimEqual)
+        shapeArr = np.array([d.shape for d in dataLst]).T
+        assert np.all(shapeArr[idxSample] == shapeArr[idxSample][0]), "All trials are required to have the same number of channels"
+
+
 # Transpose data dimensions given permutation of axis labels
 # If augment option is on, then extra axis of length 1 are added when missing
 def numpy_transpose_byorder(data, orderSrc, orderTrg, augment=False):

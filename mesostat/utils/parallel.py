@@ -5,8 +5,9 @@ import multiprocessing, pathos
 # A class that switches between serial and parallel mappers
 # Also deletes parallel mapper when class is deleted
 class GenericMapper():
-    def __init__(self, serial, nCore=None):
+    def __init__(self, serial, nCore=None, verbose=True):
         self.serial = serial
+        self.verbose = verbose
         self.pid = multiprocessing.current_process().pid
 
         if serial:
@@ -24,10 +25,15 @@ class GenericMapper():
     #         self.pool.join()
 
     def map(self, f, x):
-        t1 = time()
-        print("----Root process", self.pid, "started task on", self.nCore, "cores----")
+        if self.verbose:
+            t1 = time()
+            print("----Root process", self.pid, "started task on", self.nCore, "cores----")
+
         rez = self.map_func(f, x)
-        print("----Root process", self.pid, "finished task. Time taken", np.round(time() - t1, 3), "seconds")
+
+        if self.verbose:
+            print("----Root process", self.pid, "finished task. Time taken", np.round(time() - t1, 3), "seconds")
+
         return rez
 
     def mapMultiArg(self, f, x):

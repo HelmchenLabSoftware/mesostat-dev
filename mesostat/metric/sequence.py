@@ -51,11 +51,12 @@ def cumul_ord_3D(data, settings):
 def cumul_ord_3D_non_uniform(data2DLst, settings):
     if "".join(sorted(settings['dim_order'])) != "ps":
         raise ValueError("Cumulative Orderability requires 3D data")
-
     assert np.all([np.prod(data.shape) != 0 for data in data2DLst]), "Should have non-zero data axis"
 
-    dataOrd = [numpy_transpose_byorder(data, settings['dim_order'], "ps") for data in data2DLst]
-
+    if settings['dim_order'] != "ps":
+        dataOrd = [numpy_transpose_byorder(data, settings['dim_order'], "ps") for data in data2DLst]
+    else:
+        dataOrd = data2DLst
 
     # Determine baseline by cell
     baselineByCell = np.array([np.min(dataTrial, axis=1) for dataTrial in dataOrd])
@@ -67,8 +68,8 @@ def cumul_ord_3D_non_uniform(data2DLst, settings):
 
 
 def avg_cumul_ord_3D(data, settings):
-    return np.mean(offdiag_1D(cumul_ord_3D(data, settings)))
+    return np.nanmean(offdiag_1D(cumul_ord_3D(data, settings)))
 
 
 def avg_cumul_ord_3D_non_uniform(data2DLst, settings):
-    return np.mean(offdiag_1D(cumul_ord_3D_non_uniform(data2DLst, settings)))
+    return np.nanmean(offdiag_1D(cumul_ord_3D_non_uniform(data2DLst, settings)))
