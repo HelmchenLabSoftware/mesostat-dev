@@ -3,19 +3,7 @@ from time import time, sleep
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Export library path
-rootname = "mesoscopic-functional-connectivity"
-thispath = os.path.dirname(os.path.abspath(__file__))
-rootpath = os.path.join(thispath[:thispath.index(rootname)], rootname)
-print("Appending project path", rootpath)
-sys.path.append(rootpath)
-
-from codes.lib.info_metrics.info_metrics_generic import parallel_metric_2d
-
-
-# IDTxl parameters
-def parm_append_cmi(param, cmiEst):
-    return {**param, **{'cmi_estimator'   : cmiEst}}
+from mesostat.metric.metric import MetricCalculator
 
 
 def generate_data(nTrial, nData, isSelfPredictive, isLinear, isShifted):
@@ -51,14 +39,11 @@ def write_phase_space_fig(data, path, dataName):
 
 def write_fc_lag_p_fig(rez, path, rezKey):
     # Plot results
-    fig, ax = plt.subplots(ncols=len(rez), squeeze=False)
-    for iRez, rezMat in enumerate(rez):
-        rezAbsRound = np.round(np.abs(rezMat), 2)
-        ax[0, iRez].imshow(rezAbsRound, vmin=0)
-        for (j, i), label in np.ndenumerate(rezAbsRound):
-            ax[0, iRez].text(i, j, label, ha='center', va='center', color='r')
+    fig, ax = plt.subplots()
+    ax.imshow(rez)
 
-    outNameBare = "_".join(rezKey) if rezKey[-1] is not None else "_".join(rezKey[:-1])
+    print(rezKey)
+    outNameBare = "_".join([k for k in rezKey if k is not None])
     plt.savefig(os.path.join(path, outNameBare + ".png"))
     plt.close()
 
@@ -67,12 +52,6 @@ def write_fc_lag_p_fig(rez, path, rezKey):
 # Generic parameters
 ########################
 outpath = "tmp_imgs"
-
-param = {
-    'dim_order'       : 'prs',
-    'max_lag_sources' : 0,
-    'min_lag_sources' : 0
-}
 
 nTime = 100
 nTrial = 10
@@ -83,10 +62,9 @@ nCoreArr = np.arange(1,5)
 ########################
 
 algDict = {
-    "Libraries"    : ["corr", "corr", "idtxl", "idtxl", "idtxl"],
-    "Estimators"   : ["corr", "spr", "BivariateMI", "BivariateMI", "BivariateMI"],
+    "Metric"       : ["crosscorr", "crosscorr", "BivariateMI", "BivariateMI", "BivariateMI"],
+    "Library"      : ["corr", "spr", None, None, None, None],
     "CMI"          : [None, None, "OpenCLKraskovCMI", "JidtGaussianCMI", "JidtKraskovCMI"],
-    "parallel_trg" : [False, False, True, True, True]
 }
 
 excludeCMI = ["OpenCLKraskovCMI"]
@@ -98,31 +76,37 @@ for dataName in ["Linear", "Circular"]:
 
     write_phase_space_fig(data, outpath, dataName)
 
-    for library, estimator, cmi, parTarget in zip(*algDict.values()):
+    for metricName, estimator, cmi in zip(*algDict.values()):
         # Get label
-        taskKey = (dataName, library, estimator, cmi)
+        taskKey = (dataName, metricName, estimator, cmi)
 
         if cmi not in excludeCMI:
             print("computing", taskKey)
 
             # Get settings
-            paramThis = param if cmi is None else parm_append_cmi(param, cmi)
+            metricSettings = {
+                'lag': 1,
+                'min_lag_sources': 1,
+                'max_lag_sources': 1,
+                "cmi_estimator": cmi,
+                'est': estimator,
+                'parallelTrg': True
+            }
 
             # Compute performance metric
             timesDict[taskKey] = []
 
             for nCore in nCoreArr:
                 tStart = time()
-                rez = parallel_metric_2d([data], library, [estimator], paramThis, parTarget=parTarget, serial=False, nCore=nCore)
-                rez = rez[estimator][0]
+                mc = MetricCalculator(nCore=nCore)
+                mc.set_data(data, 'prs', zscoreDim="rs")
+                rez = mc.metric3D(metricName, "", metricSettings=metricSettings)
+                if metricName != "crosscorr":
+                    rez = rez[0]
+
                 timesDict[taskKey] += [time() - tStart]
 
-                ptests += [taskKey + (nCore, rez[2][0,1])]
-
                 write_fc_lag_p_fig(rez, outpath, taskKey)
-
-            # TODO: Report significance of off-diagonal link
-
 
             print("Sleeping...")
             sleep(1)
@@ -137,6 +121,6 @@ for k,v in timesDict.items():
     plt.semilogy(nCoreArr, v, label=str(k))
 
 plt.xlabel("nCores")
-plt.xlabel("runtime, seconds")
+plt.ylabel("runtime, seconds")
 plt.legend()
 plt.show()

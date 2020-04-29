@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.arrays import perm_map_str, numpy_take_all, unique_subtract
+from mesostat.utils.arrays import perm_map_str, numpy_take_all, unique_subtract, numpy_nonelist_to_array
 from mesostat.utils.algorithms import non_uniform_base_arithmetic_iterator
 
 
@@ -79,7 +79,8 @@ class SweepGenerator:
         else:
             idxSampleAxis = self.dimOrderSrc.index("s")
             nSample = self.data.shape[idxSampleAxis]
-            self.iterTotalShapeFinal = (nSample, ) + self.iterTotalShape
+            nSampleWindowed = nSample - self.timeWindow + 1
+            self.iterTotalShapeFinal = (nSampleWindowed, ) + self.iterTotalShape
 
 
     def _plain_iterator(self, data=None):
@@ -197,15 +198,16 @@ class SweepGeneratorNonUniform:
 
     def unpack(self, rezLst):
         if len(rezLst) == 1:
-            return rezLst[0]
+            return rezLst
 
-        # Check shapes of all results are the same
-        assert np.all([rez.shape == rezLst[0].shape for rez in rezLst])
+        # Check shapes of all results are the same, and fill in None's where data was illegal
+        # assert np.all([rez.shape == rezLst[0].shape for rez in rezLst])
+        rezArr = numpy_nonelist_to_array(rezLst)
+
         rezShape = rezLst[0].shape
-
         trgShape = tuple(self.shapeDict[dim] for dim in "rp" if dim in self.dimOrderTrg)
 
-        rezArr = np.array(rezLst).reshape(trgShape + rezShape)
+        rezArr = rezArr.reshape(trgShape + rezShape)
 
         if len(trgShape) < 2:
             return rezArr

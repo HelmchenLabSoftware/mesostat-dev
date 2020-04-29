@@ -107,6 +107,36 @@ def numpy_take_all(a, axes, indices):
     slices = tuple(indices[axes.index(i)] if i in axes else slice(None) for i in range(a.ndim))
     return a[slices]
 
+
+# Take list whose values are either None or arrays of the same shape
+# Figure out shape, replace None with np.nan arrays of that shape
+# Convert whole thing to array
+def numpy_nonelist_to_array(lst):
+    noneIdxs = np.array([elem is None for elem in lst]).astype(bool)
+    if np.all(noneIdxs):
+        raise ValueError("List only contains None values, can't figure out shape")
+
+    firstNonNoneIdx = np.where(~noneIdxs)[0][0]
+    baseDim = lst[firstNonNoneIdx].ndim
+    if baseDim == 0:
+        # have a list of scalar values
+        none2nan = lambda val : val if val is not None else np.nan
+        return np.array([none2nan(val) for val in lst])
+    else:
+        # Have a list of arrays
+        baseShape = lst[firstNonNoneIdx].shape
+        nonePatch = np.full(baseShape, np.nan)
+        rezLst = []
+        for elem in lst:
+            if elem is None:   # Replace all None's with NAN arrays of correct shape
+                rezLst += [nonePatch]
+            else:  # For all normal arrays, check that their shape is the same
+                assert elem.shape == baseShape
+                rezLst += [elem]
+        return np.array(rezLst)
+
+
+
 # Assign each string to one key out of provided
 # If no keys found, assign special key
 # If more than 1 key found, raise error

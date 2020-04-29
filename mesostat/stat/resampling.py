@@ -1,43 +1,67 @@
 import numpy as np
 
-def bootstrap_1_sample(x):
-    nData = x.shape[0]
-    return x[np.random.randint(0, nData, nData)]
 
-def permutation_1_sample(x):
-    nData = x.shape[0]
-    return x[np.random.permutation(nData)]
+# Resamples data along given axis using bootstrap method
+def bootstrap(x, axis=0):
+    nElemAxis = x.shape[axis]
+    idxBoot = np.random.randint(0, nElemAxis, nElemAxis)
+    return np.take(x, idxBoot, axis=axis)
 
-def _get_1_sample_method(method):
-    if method == 'bootstrap':
-        return bootstrap_1_sample
-    elif method == 'permutation':
-        return permutation_1_sample
-    else:
-        raise ValueError("Unknown method", method)
 
-def resample_monad(f, x, nSample=2000, method="permutation"):
-    sampleFunc = _get_1_sample_method(method)
+# Resamples data along given axis using permutation method
+def permutation(x, axis=0):
+    nElemAxis = x.shape[axis]
+    idxPerm = np.random.permutation(nElemAxis)
+    return np.take(x, idxPerm, axis=axis)
+
+
+# Resamples data along given axis using permutation method
+def cycling(x, axis=0):
+    nElemAxis = x.shape[axis]
+    cyclePeriod = np.random.randint(nElemAxis)
+    idxCycle = np.arange(nElemAxis)
+    idxCycle = np.hstack((idxCycle[cyclePeriod:], idxCycle[:cyclePeriod]))
+    return np.take(x, idxCycle, axis=axis)
+
+
+def resample_monad(f, x, sampleFunc, nSample=2000):
+    '''
+    :param f: Test statistic of 1 variable
+    :param x: Data array of arbitrary dimension. First dimension has to be trials
+    :param sampleFunc: Method to resample data
+    :param nSample: Number of times to resample data
+    :return: Array of test statistics calculated for resampled data
+    '''
+
     return np.array([f(sampleFunc(x)) for i in range(nSample)])
+
 
 # Dyad     ::: f is a function of two variables
 # Union    ::: X and Y are resampled from their union
-def resample_dyad_union(f,x,y, nSample=2000, method="permutation"):
+def resample_dyad_union(f,x,y, sampleFunc, nSample=2000):
+    '''
+    :param f: Test statistic of 2 variables
+    :param x: Data array of arbitrary dimension. First dimension has to be trials
+    :param y: Another dataset. All other shapes except first one has to be the same as for X
+    :param sampleFunc: Method to resample data
+    :param nSample: Number of times to resample data
+    :return: Array of test statistics calculated for resampled data
+    '''
+
     M, N = x.shape[0], y.shape[0]
     fmerged = lambda xy : f(xy[:M], xy[M:])
-    return resample_monad(fmerged, np.hstack([x, y]), nSample=nSample, method=method)
+    return resample_monad(fmerged, np.concatenate([x, y], axis=0), sampleFunc, nSample=nSample)
 
 # Dyad         ::: f is a function of two variables
 # Individual   ::: X and Y are resampled from their union
-def resample_dyad_individual(f,x,y, nSample=2000, method="permutation"):
+def resample_dyad_individual(f,x,y, sampleFunc, nSample=2000, resampleY=False):
     M, N = x.shape[0], y.shape[0]
 
-    if method == 'bootstrap':
-        fEff = lambda x, y: f(bootstrap_1_sample(x), bootstrap_1_sample(y))
-    elif method == 'permutation':
-        # Note: There is no advantage in wasting time permuting both variables, permuting one is sufficient
-        fEff = lambda x, y: f(x, permutation_1_sample(y))
+    if resampleY:
+        fEff = lambda x, y: f(sampleFunc(x), sampleFunc(y))
     else:
-        raise ValueError("Unknown method", method)
+        # Note: There is no advantage in wasting time permuting both variables, permuting one is sufficient
+        fEff = lambda x, y: f(sampleFunc(x), y)
 
     return np.array([fEff(x, y) for i in range(nSample)])
+

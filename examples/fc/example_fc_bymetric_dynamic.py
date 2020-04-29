@@ -3,19 +3,7 @@ from time import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Export library path
-rootname = "mesoscopic-functional-connectivity"
-thispath = os.path.dirname(os.path.abspath(__file__))
-rootpath = os.path.join(thispath[:thispath.index(rootname)], rootname)
-print("Appending project path", rootpath)
-sys.path.append(rootpath)
-
-from codes.lib.info_metrics.info_metrics_generic import parallel_metric_2d
-
-
-# IDTxl parameters
-def parm_append_cmi(param, cmiEst):
-    return {**param, **{'cmi_estimator'   : cmiEst}}
+from mesostat.metric.metric import MetricCalculator
 
 
 def generate_data(nTrial, nData, isSelfPredictive, isLinear, isShifted):
@@ -106,14 +94,8 @@ class MetricFigures():
 ########################
 # Generic parameters
 ########################
-param = {
-    'dim_order'       : 'prs',
-    'max_lag_sources' : 1,
-    'min_lag_sources' : 1
-}
 
 # Test Linear
-nCore = 4
 nTime = 1000
 nTrial = 5
 
@@ -122,10 +104,9 @@ nTrial = 5
 ########################
 
 algDict = {
-    "Libraries"    : ["corr", "corr", "idtxl", "idtxl", "idtxl", "idtxl"],
-    "Estimators"   : ["corr", "spr", "BivariateMI", "BivariateMI", "BivariateTE", "BivariateTE"],
-    "CMI"          : [None, None, "JidtGaussianCMI", "JidtKraskovCMI", "JidtGaussianCMI", "JidtKraskovCMI"],
-    "parallel_trg" : [False, False, True, True, True, True]
+    "Metric"       : ["crosscorr", "crosscorr", "BivariateMI", "BivariateMI", "BivariateTE", "BivariateTE"],
+    "Library"      : ["corr", "spr", None, None, None, None],
+    "CMI"          : [None, None, "JidtGaussianCMI", "JidtKraskovCMI", "JidtGaussianCMI", "JidtKraskovCMI"]
 }
 
 # Define algorithm name as concatenation of all its properties that are strings
@@ -146,8 +127,9 @@ metricFigs = MetricFigures(["values", "lags", "p-values"], nSweep, algNames)
 # Sweep loop
 ########################
 
+mc = MetricCalculator(nCore=4)
+
 performanceTimes = []
-testPValues = []
 
 for iSweep, var in enumerate(varSweep):
     predictName, dataName, shiftName = var
@@ -156,29 +138,33 @@ for iSweep, var in enumerate(varSweep):
     psFigs.addrow(data, dataLabel)
     metricFigs.set_row_label(iSweep, dataLabel)
 
-    for iAlg, (algName, library, estimator, cmi, parTarget) in enumerate(zip(algNames, *algDict.values())):
+    for iAlg, (algName, metricName, estimator, cmi) in enumerate(zip(algNames, *algDict.values())):
         # Get label
         resultLabel = dataLabel + "_" + algName
         print("computing", resultLabel)
 
         # Get settings
-        paramThis = param if cmi is None else parm_append_cmi(param, cmi)
+        metricSettings = {
+            'lag' : 1,
+            'min_lag_sources': 1,
+            'max_lag_sources': 1,
+            "cmi_estimator" : cmi,
+            'est': estimator,
+            'parallelTrg' : True
+        }
 
         # Compute metric
         tStart = time()
-        rez = parallel_metric_2d([data], library, [estimator], paramThis, parTarget=parTarget, serial=False, nCore=nCore)
-        rez = rez[estimator][0]
-        performanceTimes += [(var, algName, time() - tStart)]
+        mc.set_data(data, 'prs', zscoreDim="rs")
+        rez = mc.metric3D(metricName, "", metricSettings=metricSettings)
+        if metricName == "crosscorr":
+            rez = [rez]
+
+        performanceTimes += [(var, metricName, time() - tStart)]
 
         # Plot results
         metricFigs.addcell(rez, iSweep, iAlg)
 
-        # Report significance of off-diagonal link
-        testPValues += [(resultLabel, rez[2][0, 1])]
-
-
-print("Off diagonal p-values")
-print(np.array(testPValues))
 
 print("Timing in seconds")
 print(np.array(performanceTimes))

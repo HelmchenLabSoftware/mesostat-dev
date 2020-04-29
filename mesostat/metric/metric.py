@@ -6,7 +6,7 @@ from mesostat.metric.autocorr import autocorr_3D, autocorr_d1_3D
 from mesostat.metric.npeet import average_entropy, average_predictive_info
 from mesostat.metric.autoregression import ar1_coeff, ar1_testerr, ar_testerr
 from mesostat.metric.stretch import stretch_basis_projection
-from mesostat.metric.sequence import cumul_ord_3D, avg_cumul_ord_3D
+import mesostat.metric.sequence as sequence
 from mesostat.metric.idtxl import idtxl_single_target, idtxl_network
 
 from mesostat.utils.sweep import SweepGenerator
@@ -23,9 +23,9 @@ TODO:
 '''
 
 class MetricCalculator:
-    def __init__(self, serial=False, verbose=True):
+    def __init__(self, serial=False, verbose=True, nCore=None):
         # Initialize parallel mapper once
-        self.mapper = GenericMapper(serial, verbose=verbose)
+        self.mapper = GenericMapper(serial, verbose=verbose, nCore=nCore)
 
         # Initialize metric library
         self.metricDict = {
@@ -45,10 +45,18 @@ class MetricCalculator:
             "avgcorr":              avg_corr_3D,
             "avg_entropy":          average_entropy,
             "avg_PI":               average_predictive_info,
-            "cumul_ord":            cumul_ord_3D,
-            "cumul_ord_coeff":      avg_cumul_ord_3D,
+            "ord_moments":          sequence.temporal_moments_3D,
+            "ord_binary":           sequence.bivariate_binary_orderability_3D,
+            "ord_binary_avg":       sequence.avg_bivariate_binary_orderability_3D,
+            "ord_student":          sequence.bivariate_student_orderability_3D,
+            "ord_student_avg":      sequence.avg_bivariate_student_orderability_3D,
             "temporal_basis":       stretch_basis_projection,
             "generic_metric":       self._generic_metric
+        }
+
+        # Initialize composite metrics library
+        self.compositeMetricDict = {
+            "avg_entropy_1D" :      self._avg_entropy_1D
         }
 
     def set_data(self, data, dimOrderSrc, timeWindow=None, zscoreDim=None):
@@ -70,6 +78,8 @@ class MetricCalculator:
         return np.nanstd(data)
 
     def _TE(self, method, data, settings):
+        print(data.shape, settings)
+
         if settings["parallelTrg"]:
             return idtxl_single_target(settings["iTrg"], method, data, settings)
         else:
@@ -79,6 +89,14 @@ class MetricCalculator:
     def _generic_metric(self, data, settings):
         return settings["metric"](data, settings)
 
+    # Calculate entropy averaged over all channels
+    def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
+        if "p" in dimOrderTrg:
+            raise ValueError("Parallelizing over processes not applicable for this metric")
+
+        valH = self.metric3D("avg_entropy", "p" + dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+        return np.nanmean(valH, axis=0)
+
     def _preprocess(self, metricName, metricSettings, sweepSettings):
         # Wrapper for IDTxl - allow to parallelize over targets
         useIDTxl = ("Bivariate" in metricName) or ("Multivatiate" in metricName)
@@ -86,7 +104,7 @@ class MetricCalculator:
             if metricSettings["parallelTrg"]:
                 if sweepSettings is None:
                     sweepSettings = {}
-                sweepSettings["iTrg"] = np.arange(self.data.shape[self.dimOrderSrc.index("p")]).astype(int)
+                sweepSettings["iTrg"] = list(range(self.data.shape[self.dimOrderSrc.index("p")]))
         return sweepSettings
 
     def _postprocess(self, result, metricName, metricSettings, sweepSettings):
