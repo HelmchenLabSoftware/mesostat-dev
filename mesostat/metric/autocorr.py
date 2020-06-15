@@ -19,30 +19,40 @@ def autocorr_1D(x):
     return np.correlate(xEff, xEff, 'full')[N - 1:] / N
 
 
-# Calculates autocorrelation. Any dimensions
-# TODO: Currently autocorrelation is averaged over other provided dimensions. Check if there is a more rigorous way
 def autocorr_3D(data, settings):
-    test_have_dim("autocorr_3D", settings['dim_order'], "s")
+    '''
+    :param data:        3D data of shape "rps"
+    :param settings:    Extra settings.
+    :return:            Autocorrelation. Length same as data
+    TODO: Currently autocorrelation is averaged over other provided dimensions. Check if there is a more rigorous way
+    '''
+
+    if data.shape[2] <= 1:
+        raise ValueError("Autocorrelation requires more than 1 timestep")
 
     # Convert to canonical form
-    dataCanon = numpy_transpose_byorder(data, settings['dim_order'], 'rps', augment=True)
-    dataFlat = numpy_merge_dimensions(dataCanon, 0, 2)
+    dataFlat = numpy_merge_dimensions(data, 0, 2)
     dataThis = zscore(dataFlat)
     return np.nanmean(np.array([autocorr_1D(d) for d in dataThis]), axis=0)
 
-# List of arrays, shape [nTrial, nSample]
-def autocorr_trunc_1D(dataLst):
+def _trunc_data(dataLst):
     nSampleMin = np.min([len(data) for data in dataLst])
-    return np.nanmean([data[:nSampleMin] for data in dataLst], axis=0)
+    return np.array([data[:nSampleMin] for data in dataLst])
+
+
+# List of arrays, shape [nTrial, nSample]
+def autocorr_trunc_1D(dataLst, settings):
+    return autocorr_3D(_trunc_data(dataLst), settings)
 
 # Calculates autocorrelation of unit time shift. Can handle nan's
 def autocorr_d1_3D(data, settings):
-    test_have_dim("autocorr_d1_3D", settings['dim_order'], "s")
+    if data.shape[2] <= 1:
+        raise ValueError("Autocorrelation requires more than 1 timestep")
 
-    # Convert to canonical form
-    dataCanon = numpy_transpose_byorder(data, settings['dim_order'], 'srp', augment=True)
-    dataZ = zscore(dataCanon)
-
-    dataZpre  = dataZ[:-1].flatten()
-    dataZpost = dataZ[1:].flatten()
+    dataZ = zscore(data)
+    dataZpre  = dataZ[:,:,:-1].flatten()
+    dataZpost = dataZ[:,:,1:].flatten()
     return np.nanmean(dataZpre * dataZpost)
+
+def autocorr_d1_3D_non_uniform(dataLst, settings):
+    return autocorr_d1_3D(_trunc_data(dataLst), settings)

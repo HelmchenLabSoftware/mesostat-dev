@@ -1,21 +1,60 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim
 from mesostat.metric.impl.basis_projector import BasisProjector
+from mesostat.utils.signals import resample
+
+
+# Evaluate first few projections to Legendre basis
+def basis_projection_1D(data):
+    nSample = len(data)
+    bp = BasisProjector(nSample)
+    return bp.project(data)
+
 
 def stretch_basis_projection(data, settings):
-    test_have_dim("crosscorr", settings['dim_order'], "s")
+    if data.shape[2] < 2:
+        raise ValueError("Expected more than 1 timestep")
 
     # Average all axis except samples
-    axis = tuple([i for i,e in enumerate(settings['dim_order']) if e != "s"])
-    dataAvg = np.nanmean(data, axis=axis)
-    nSample = len(dataAvg)
+    dataAvg = np.nanmean(data, axis=(0, 1))
 
-    # Evaluate first few projections to Legendre basis
-    bp = BasisProjector(nSample)
-    return bp.project(dataAvg)
+    return basis_projection_1D(dataAvg)
 
 
 def stretch_basis_projection_non_uniform(dataLst, settings):
-    return np.mean([stretch_basis_projection(data, settings) for data in dataLst], axis=0)
+    rez = []
+    for data2D in dataLst:
+        if data2D.shape[1] < 2:
+            raise ValueError("Expected more than 1 timestep")
 
+        data1D = np.nanmean(data2D, axis=0)
+        rez += [basis_projection_1D(data1D)]
+
+    return np.mean(rez, axis=0)
+
+
+# Resample data to fixed length
+def resample_non_uniform(data2DLst, settings):
+    nTimeTrg = settings["nResamplePoint"]
+    xTrg = np.linspace(0, 1, nTimeTrg)
+    paramResample = {"method" : "downsample", "kind" : "kernel"}
+
+    rezLst = []
+    for data2D in data2DLst:
+        if np.any(np.isnan(data2D)):
+            raise ValueError("Can't resample data that has NAN in it")
+
+        # Average over channels if multiple channels present - WLOG, averaging before or after resampling is equivalent
+        data1D = np.mean(data2D, axis=0)
+
+        # Test if there are at least 2 timesteps in this trial
+        nTimeThis = len(data1D)
+        if nTimeThis <= 1:
+            raise ValueError("Trying to resample a degenerate time series of length", nTimeThis)
+
+        # Resample data to target number of steps using Gaussian Kernel smoothening
+        xSrc = np.linspace(0, 1, nTimeThis)
+        rezLst += [resample(xSrc, data1D, xTrg, paramResample)]
+
+    # Also average over trials
+    return np.mean(rezLst, axis=0)

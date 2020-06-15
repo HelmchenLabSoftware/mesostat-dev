@@ -50,6 +50,21 @@ def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
         assert np.all(shapeArr[idxSample] == shapeArr[idxSample][0]), "All trials are required to have the same number of channels"
 
 
+def get_list_shapes(lst, axis=None):
+    if axis is None:
+        return list(set([elem.shape for elem in lst]))
+    else:
+        return list(set([elem.shape[axis] for elem in lst]))
+
+
+def get_uniform_dim_shape(lst, axis=None):
+    shapes = get_list_shapes(lst, axis)
+    if len(shapes) > 1:
+        raise ValueError("Expected uniform shapes for axis", axis, "; got", shapes)
+    return next(iter(shapes))
+
+
+
 # Transpose data dimensions given permutation of axis labels
 # If augment option is on, then extra axis of length 1 are added when missing
 def numpy_transpose_byorder(data, orderSrc, orderTrg, augment=False):

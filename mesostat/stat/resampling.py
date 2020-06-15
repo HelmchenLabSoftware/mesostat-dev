@@ -15,7 +15,7 @@ def permutation(x, axis=0):
     return np.take(x, idxPerm, axis=axis)
 
 
-# Resamples data along given axis using permutation method
+# Resamples data along given axis using cycling method
 def cycling(x, axis=0):
     nElemAxis = x.shape[axis]
     cyclePeriod = np.random.randint(nElemAxis)

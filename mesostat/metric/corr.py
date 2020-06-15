@@ -1,8 +1,16 @@
 import numpy as np
 import scipy.stats
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim
+from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes, get_uniform_dim_shape
 from mesostat.stat.connectomics import offdiag_1D
+
+
+# Test that along a given dimension all shapes are equal
+def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
+    if dimEqual in dataDimOrder:
+        idxSample = dataDimOrder.index(dimEqual)
+        shapeArr = np.array([d.shape for d in dataLst]).T
+        assert np.all(shapeArr[idxSample] == shapeArr[idxSample][0]), "All trials are required to have the same number of channels"
 
 
 # p-value of a single correlation between two scalar variables
@@ -20,6 +28,13 @@ def corr_significance(c, nData):
 # If y2D is specified, correlation computed for x-x and x-y in a composite matrix
 def corr_2D(x2D, y2D=None, est='corr'):
     nChannel, nData = x2D.shape
+
+    if nChannel <= 1:
+        raise ValueError("Correlation requires at least 2 channels, got", nChannel)
+
+    if nData <= 1:
+        raise ValueError("Correlation requires at least 2 samples, got", nData)
+
     if est == 'corr':
         return np.corrcoef(x2D, y2D)
     elif est == 'spr':
@@ -39,8 +54,7 @@ def corr_2D(x2D, y2D=None, est='corr'):
 # If data has trials, concatenate trials into single timeline when computing correlation
 def corr_3D(data, settings):
     # Convert to canonical form
-    test_have_dim("corr3D", settings['dim_order'], "p")
-    dataCanon = numpy_transpose_byorder(data, settings['dim_order'], 'psr', augment=True)
+    dataCanon = numpy_transpose_byorder(data, 'rps', 'psr')
     dataFlat = numpy_merge_dimensions(dataCanon, 1, 3)
 
     est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
@@ -51,6 +65,17 @@ def corr_3D(data, settings):
 def avg_corr_3D(data, settings):
     M = corr_3D(data, settings)
     return np.nanmean(np.abs(offdiag_1D(M)))
+
+
+def corr_3D_non_uniform(dataLst, settings):
+    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
+    return corr_2D(np.hstack(dataLst), est=est)
+
+
+def avg_corr_3D_non_uniform(dataLst, settings):
+    M = corr_3D_non_uniform(dataLst, settings)
+    return np.nanmean(np.abs(offdiag_1D(M)))
+
 
 
 # FIXME: Correct all TE-based procedures, to compute cross-correlation as a window sweep externally
@@ -65,12 +90,8 @@ def cross_corr_3D(data, settings):
     :return: A matrix [nLag x nSource x nTarget]
     '''
 
-    # Test that necessary dimensions have been provided
-    test_have_dim("crosscorr", settings['dim_order'], "p")
-    test_have_dim("crosscorr", settings['dim_order'], "s")
-
     # Transpose dataset into comfortable form
-    dataOrd = numpy_transpose_byorder(data, settings['dim_order'], 'psr', augment=True)  # add trials dimension for simplicity
+    dataOrd = numpy_transpose_byorder(data, 'rps', 'psr')
 
     # Extract parameters
     # Extract parameters
@@ -81,8 +102,8 @@ def cross_corr_3D(data, settings):
     if nTime <= lag:
         raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nTime)
 
-    xx = numpy_merge_dimensions(dataOrd[:, lag:], 1, 3)
-    yy = numpy_merge_dimensions(dataOrd[:, :nTime-lag], 1, 3)
+    xx = numpy_merge_dimensions(dataOrd[:, :nTime - lag], 1, 3)
+    yy = numpy_merge_dimensions(dataOrd[:, lag:], 1, 3)
 
     # Only interested in x-y correlations, crop x-x and y-y
     est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
@@ -99,24 +120,19 @@ def cross_corr_non_uniform_3D(dataLst, settings):
     :return: A matrix [nLag x nSource x nTarget]
     '''
 
-    # Transpose dataset into comfortable form
-    # Since no augmentation, this will automatically test if the dimensions are present
-    dataOrdLst = [numpy_transpose_byorder(data, settings['dim_order'], 'ps') for data in dataLst]
-
     # Extract parameters
     lag = settings['lag']
 
     # Test that all trials have the same number of
     # Test that all trials have sufficient timesteps for lag estimation
-    dataShapes = np.array([data.shape for data in dataLst]).T
+    nNode = get_uniform_dim_shape(dataLst, axis=0)
+    nTimeMin = np.min(get_list_shapes(dataLst, axis=1))
 
-    assert np.all(dataShapes[0] == dataShapes[0][0]), "Number of channels must be the same for all trials"
-    if np.min(dataShapes[1]) <= lag:
-        raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', np.min(dataShapes[1]))
+    if nTimeMin <= lag:
+        raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nTimeMin)
 
-    nNode = dataShapes[0][0]
-    xx = np.hstack([data[:, lag:] for data in dataOrdLst])
-    yy = np.hstack([data[:, :-lag] for data in dataOrdLst])
+    xx = np.hstack([data[:, lag:] for data in dataLst])
+    yy = np.hstack([data[:, :-lag] for data in dataLst])
 
     # Only interested in x-y correlations, crop x-x and y-y
     est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'

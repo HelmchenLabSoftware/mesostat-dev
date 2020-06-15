@@ -19,10 +19,11 @@ class GenericMapper():
             # self.pool = multiprocessing.Pool(self.nCore)
             self.map_func = lambda f, x: self.pool.map(f, x)
 
-    # def __del__(self):
-    #     if not self.serial:
-    #         self.pool.close()
-    #         self.pool.join()
+    def __del__(self):
+        if not self.serial:
+            self.pool.close()
+            self.pool.join()
+            self.pool.clear()
 
     def map(self, f, x):
         if self.verbose:

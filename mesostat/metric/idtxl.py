@@ -89,7 +89,8 @@ def parse_results_network(results, nNode, method):
 @redirect_stdout
 def idtxl_single_target(iTrg, method, data, settings):
     # Convert data to IDTxl Format
-    dataIDTxl = Data(data, dim_order=settings['dim_order'])
+    #dataIDTxl = Data(data, dim_order=settings['dim_order'])
+    dataIDTxl = Data(data, dim_order='rps')
 
     # Get number of nodes
     # idxNodeShape = settings['dim_order'].index("p")
@@ -110,7 +111,8 @@ def idtxl_single_target(iTrg, method, data, settings):
 @redirect_stdout
 def idtxl_network(method, data, settings):
     # Convert data to IDTxl Format
-    dataIDTxl = Data(data, dim_order=settings['dim_order'])
+    #dataIDTxl = Data(data, dim_order=settings['dim_order'])
+    dataIDTxl = Data(data, dim_order='rps')
 
     # idxNodeShape = settings['dim_order'].index("p")
     # nNode = data.shape[idxNodeShape]

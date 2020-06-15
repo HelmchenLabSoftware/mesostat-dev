@@ -4,14 +4,21 @@ from scipy import interpolate
 from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes
 from mesostat.stat.stat import gaussian
 
-# def zscore(x):
-#     return (x - np.nanmean(x)) / np.nanstd(x)
 
 def zscore(x, axis=None):
     shapeNew = numpy_shape_reduced_axes(x.shape, axis)
     mu = np.nanmean(x, axis=axis).reshape(shapeNew)
     std = np.nanstd(x, axis=axis).reshape(shapeNew)
     return (x - mu) / std
+
+
+# ZScore list of arrays, computing mean and std from concatenated data
+def zscore_list(lst):
+    xFlat = np.hstack([data.flatten for data in lst])
+    mu = np.nanmean(xFlat)
+    std = np.nanstd(mu)
+    return [(data - mu)/std for data in lst]
+
 
 # Compute discretized exponential decay convolution
 # Works with multidimensional arrays, as long as shapes are the same

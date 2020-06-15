@@ -1,50 +1,96 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim
-from mesostat.stat.machinelearning import drop_nan_rows
+from mesostat.utils.arrays import numpy_merge_dimensions, get_uniform_dim_shape
 
-# Convert a 2D dataset to predicted values (current timesteps flattened) and predictors (past timesteps flattened)
-# Afterwards, drop all rows where at least one value is NAN
-# NOTE: currently, past dimensions are sorted from oldest to newest, so data[t-1] = x[-1]
+
 def split2D(data2D, nHist):
-    # TODO: Maybe this operation can be accelerated
-    sweepTime = lambda d: np.array([d[iTime:iTime + nHist] for iTime in range(len(d) - nHist)])
+    '''
+    :param data2D:  Input array of shape [nTrial, nTime]
+    :param nHist:   number of timesteps of history to consider
+    :return:        x - past values; y - future values
 
-    y = np.hstack([dataTrial[nHist:] for dataTrial in data2D])
-    x = np.vstack([sweepTime(dataTrial) for dataTrial in data2D])
+    Convert dataset into past and future values. Future is always for 1 timestep, past can be as along as nHist
+    NOTE: currently, past dimensions are sorted from oldest to newest, so data[t-1] = x[-1]
+    '''
+    nTrial, nTime = data2D.shape
+    if nTime < nHist + 1:
+        raise ValueError("Autoregression of history", nHist, "requires", nHist+1, "timesteps. Got", nTime)
 
-    # Truncate all datapoints that have at least one NAN in them
-    return drop_nan_rows(x, y)
+    x = np.array([data2D[:, i:i + nHist] for i in range(nTime - nHist)])    # (rs) -> (srw)
+    x = numpy_merge_dimensions(x.transpose((1, 0, 2)), 0, 2)                # (srw) -> (r*s, w)
+    y = data2D[:, nHist:].flatten()                                         # (rs) -> (r*s)
+    return x, y
 
 
-# Def
-def split3D(data, dimOrder, nHist):
-    test_have_dim("time_split", dimOrder, "s")
+def split2D_non_unifrom(dataLst, nHist):
+    # sample windows over time (rs) -> (rsw)
+    rez = []
+    for data1D in dataLst:
+        nTime = len(data1D)
+        if nTime < nHist + 1:
+            raise ValueError("Autoregression of history", nHist, "requires", nHist + 1, "timesteps. Got", nTime)
 
-    dataCanon = numpy_transpose_byorder(data, dimOrder, 'srp', augment=True)
-    nTime = dataCanon.shape[0]
+        rez += [np.array([data1D[i:i + nHist] for i in range(nTime - nHist)])]
 
-    x = np.array([dataCanon[i:i + nHist] for i in range(nTime - nHist)])
+    x = np.concatenate(rez, axis=0)                         # (rsw) -> (r*s, w)
+    y = np.hstack([data1D[nHist:] for data1D in dataLst])   # (rs) -> (r*s)
+    return x, y
 
-    # shape transform for x :: (swrp) -> (s*r, p*w)
-    x = x.transpose((0, 2, 3, 1))
+
+def split3D(data, nHist):
+    '''
+
+    :param data:    Input array of shape 'rps'
+    :param nHist:   number of timesteps of history to consider
+    :return:        x - past values; y - future values
+
+    Convert dataset into past and future values. Future is always for 1 timestep, past can be as along as nHist
+    NOTE: currently, past dimensions are sorted from oldest to newest, so data[t-1] = x[-1]
+    '''
+
+    nTrial, nChannel, nTime = data.shape
+
+    if nTime < nHist + 1:
+        raise ValueError("Autoregression of history", nHist, "requires", nHist+1, "timesteps. Got", data.shape[2])
+
+    # sample windows over time (rps) -> (srpw)
+    x = np.array([data[:, :, i:i + nHist] for i in range(nTime - nHist)])
+
+    # shape transform for x :: (srpw) -> (r*s, p*w)
+    x = x.transpose((1, 0, 2, 3))        # (srpw) -> (rspw)
     x = numpy_merge_dimensions(x, 2, 4)  # p*w
-    x = numpy_merge_dimensions(x, 0, 2)  # s*r
+    x = numpy_merge_dimensions(x, 0, 2)  # r*s
 
-    # shape transform for y :: (srp) -> (s*r, p)
-    y = numpy_merge_dimensions(dataCanon[nHist:], 0, 2)
+    # Convert to windows
+    # shape transform for y :: (rps) -> (r*s, p)
+    y = data.transpose((0,2,1))[:, nHist:]
+    y = numpy_merge_dimensions(y, 0, 2)
 
-    return drop_nan_rows(x, y)
+    return x, y
 
 
-# # Construct stacked past measurements
-# def AR_STACK_LAG(data, nHist):
-#     nCh, nTr, nT = data.shape
-#
-#     x = np.zeros((nCh * nHist, nTr, nT - nHist))
-#     for i in range(nHist):
-#         x[nCh * i:nCh * (i + 1)] = data[:, :, i:i - nHist]
-#
-#     y = data[:, :, nHist:]
-#
-#     return x, y
+def split3D_non_uniform(dataLst, nHist):
+    # Test that the number of channels is uniform
+    nChannel = get_uniform_dim_shape(dataLst, axis=1)
+
+    # sample windows over time (rps) -> (rspw)
+    rez = []
+    for data2D in dataLst:
+        nTime = data2D.shape[1]
+        if nTime < nHist + 1:
+            raise ValueError("Autoregression of history", nHist, "requires", nHist + 1, "timesteps. Got", nTime)
+
+        rez += [np.array([data2D[:, i:i + nHist] for i in range(nTime - nHist)])]
+
+
+    # shape transform for x :: (srpw) -> (r*s, p*w)
+    # x = x.transpose((0, 2, 3, 1))
+    x = np.concatenate(rez, axis=0)   # (rspw) -> (r*s, p, w)
+    x = numpy_merge_dimensions(x, 1, 3)  # p*w
+
+    # Convert to windows
+    # shape transform for y :: (rps) -> (r*s, p)
+    y = [data2D[:, nHist:].T for data2D in dataLst]   # (rps) -> (rsp)
+    y = np.concatenate(y, axis=0)                     # (rsp) -> (r*s, p)
+
+    return x, y

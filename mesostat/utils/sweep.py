@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.arrays import perm_map_str, numpy_take_all, unique_subtract, numpy_nonelist_to_array
+from mesostat.utils.arrays import perm_map_str, numpy_take_all, unique_subtract, numpy_nonelist_to_array, numpy_transpose_byorder
 from mesostat.utils.algorithms import non_uniform_base_arithmetic_iterator
 
 
@@ -99,10 +99,10 @@ class SweepGenerator:
         if data is None:
             data = self.data
 
-        settings = {"dim_order" : unique_subtract(self.dimOrderSrc, self.dimOrderTrg)}
+        dimOrderTrue = unique_subtract(self.dimOrderSrc, self.dimOrderTrg)
 
         if len(self.iterTotalShape) == 0:
-            yield data, settings
+            yield data, {}
         else:
             outerIterator = non_uniform_base_arithmetic_iterator(self.iterTotalShape)
 
@@ -110,12 +110,15 @@ class SweepGenerator:
                 iNDData = iND[:self.nAxis]
                 iNDSettings = iND[self.nAxis:]
 
+                # Take data along iterated axes, and augment fake axes instead, so that data is always the same shape
                 dataThis = numpy_take_all(data, self.iterDataAxis, iNDData)
+                dataThis = numpy_transpose_byorder(dataThis, dimOrderTrue, self.dimOrderSrc, augment=True)
+
                 if self.settingsSweep is None:
-                    yield dataThis, settings
+                    yield dataThis, {}
                 else:
                     extraSettings = {k : v[iSett] for iSett, (k,v) in zip(iNDSettings, self.settingsSweep.items())}
-                    yield dataThis, {**settings, **extraSettings}
+                    yield dataThis, extraSettings
 
 
     def iterator(self):
@@ -186,19 +189,23 @@ class SweepGeneratorNonUniform:
             for data in self.dataLst:
                 if "p" in self.dimOrderTrg:
                     for iProcess in range(self.shapeDict["p"]):
-                        yield [data[iProcess]], {"dim_order" : "s"}
+                        yield [numpy_transpose_byorder(data[iProcess], "s", "ps", augment=True)], {}
                 else:
-                    yield [data], {"dim_order" : "ps"}
+                    yield [data], {}
         else:
             if "p" in self.dimOrderTrg:
                 for iProcess in range(self.shapeDict["p"]):
-                    yield [data[iProcess] for data in self.dataLst], {"dim_order" : "s"}
+                    yield [numpy_transpose_byorder(data[iProcess], "s", "ps", augment=True)
+                           for data in self.dataLst], {}
             else:
-                yield self.dataLst, {"dim_order" : "ps"}
+                yield self.dataLst, {}
 
+    # Convert from sweep to expected output shape
+    # Input has shape (sweep, result), where sweep is 1D and result may be multiple dimensions
+    # Goal is to convert sweep into expected dimensions, while keeping result intact
     def unpack(self, rezLst):
         if len(rezLst) == 1:
-            return rezLst
+            return np.array(rezLst)
 
         # Check shapes of all results are the same, and fill in None's where data was illegal
         # assert np.all([rez.shape == rezLst[0].shape for rez in rezLst])
@@ -206,7 +213,6 @@ class SweepGeneratorNonUniform:
 
         rezShape = rezLst[0].shape
         trgShape = tuple(self.shapeDict[dim] for dim in "rp" if dim in self.dimOrderTrg)
-
         rezArr = rezArr.reshape(trgShape + rezShape)
 
         if len(trgShape) < 2:

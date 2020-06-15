@@ -16,6 +16,12 @@ def predict(x, alpha):
 
 
 def fit_mle(x, y):
+    '''
+    :param x:  Parameters of shape [nTrial, nInputFeature]
+    :param y:  Values of shape [nTrial, nOutputFeature]
+    :return:   AR Matrix of shape [nInputFeature, nOutputFeature]
+    '''
+
     # Construct linear system for transition matrices
     # M11 = np.einsum('ajk,bjk', x, y)
     # M12 = np.einsum('ajk,bjk', x, x)

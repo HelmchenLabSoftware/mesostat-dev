@@ -1,32 +1,14 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim, test_uniform_dimension
+from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes
 from mesostat.metric.impl.time_splitter import split3D
+from mesostat.stat.machinelearning import drop_nan_rows
 
 import npeet.entropy_estimators as ee
 
 
-# # Compute metrics individually for each channel
-# def npeet_metric_1D_generic(method, data, settings):
-#     assert data.shape[settings['dim_order'].index("p")] == 1, "Expected only 1 channel for this estimate"
-#     methods1D = {
-#         'Entropy' : entropy,
-#         'PI'      : predictive_info
-#     }
-#     return methods1D[method](data, settings)
-#
-#
-# # Compute 1 metric for all channels
-# def npeet_metric_ND_generic(method, data, settings):
-#     methodsND = {
-#         'Entropy' : entropy,
-#         'PI'      : predictive_info
-#     }
-#     return methodsND[method](data, settings)
-
-
-def average_entropy(data, settings):
-    dataCanon = numpy_transpose_byorder(data, settings['dim_order'], 'srp', augment=True)
+def average_entropy_3D(data, settings):
+    dataCanon = numpy_transpose_byorder(data, 'rps', 'srp')
     dataFlat = numpy_merge_dimensions(dataCanon, 0, 2)
     nSample, nProcess = dataFlat.shape
     if nSample < 2 * nProcess:
@@ -36,10 +18,17 @@ def average_entropy(data, settings):
         return ee.entropy(dataFlat) / nProcess
 
 
+def average_entropy_3D_non_uniform(dataLst, settings):
+    dataFlat = np.hstack(dataLst)                    # Merge samples and repetitions
+    dataFlat = dataFlat.reshape(1, *dataFlat.shape)  # Add empty repetitions axis
+    return average_entropy_3D(dataFlat, settings)
+
+
 # Predictive information
 # Defined as H(Future) - H(Future | Past) = MI(Future : Past)
 def average_predictive_info(data, settings):
-    x, y = split3D(data, settings['dim_order'], settings['max_lag'])
+    x, y = drop_nan_rows(split3D(data, settings['max_lag']))
+
     nSample, nProcess = x.shape
     if nSample < 2 * nProcess:
         # If there are too few samples, there is no point to calculate anything
@@ -49,22 +38,15 @@ def average_predictive_info(data, settings):
 
 
 def average_predictive_info_non_uniform(dataLst, settings):
-    test_have_dim("_split_past_future", settings['dim_order'], "s")
-    test_uniform_dimension(dataLst, settings['dim_order'], "p")
     # Test that all trials have sufficient timesteps for lag estimation
-    idxSample = settings['dim_order'].index('s')
-    nSampleMin = np.min([data.shape[idxSample] for data in dataLst])
+    nSampleMin = np.min(get_list_shapes(dataLst, axis=1))
     if nSampleMin <= settings['max_lag']:
         raise ValueError('lag', settings['max_lag'], 'cannot be estimated for number of timesteps', nSampleMin)
-
-    # # Transpose dataset into comfortable form
-    # tmpDimOrder = 'ps'
-    # dataOrdLst = [numpy_transpose_byorder(data, settings['dim_order'], tmpDimOrder, augment=True) for data in dataLst]
 
     xLst = []
     yLst = []
     for dataTrial in dataLst:
-        x, y = split3D(dataTrial, settings['dim_order'], settings['max_lag'])
+        x, y = drop_nan_rows(split3D(dataTrial, settings['max_lag']))
         xLst += [x]
         yLst += [y]
     xArr = np.vstack(xLst)
@@ -76,3 +58,36 @@ def average_predictive_info_non_uniform(dataLst, settings):
         return np.array(np.nan)
     else:
         return ee.mi(xArr, yArr) / nProcess
+
+
+# Analog of cross-correlation for pairwise mutual infos
+def cross_mi_3D(data, settings):
+    nTrial, nProcess, nSample = data.shape
+    if nTrial*nSample < 2 * nProcess:
+        # If there are too few samples, there is no point to calculate anything
+        return np.full((nProcess, nProcess), np.nan)
+    else:
+        lag = settings['lag']
+
+        # Check that number of timesteps is sufficient to estimate lagMax
+        if nSample <= lag:
+            raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nSample)
+
+        # dataCanon = numpy_transpose_byorder(data, 'rps', 'srp')
+        dataOrd = numpy_transpose_byorder(data, 'rps', 'psr')
+        xx = numpy_merge_dimensions(dataOrd[:, :nSample-lag], 1, 3)
+        yy = numpy_merge_dimensions(dataOrd[:, lag:], 1, 3)
+
+        rez = np.zeros((nProcess, nProcess))
+        if lag > 0:
+            for i in range(nProcess):
+                for j in range(nProcess):
+                    rez[i][j] = ee.mi(xx[i], yy[j])
+        else:
+            # Optimization - take advantage of symmetry
+            for i in range(nProcess):
+                for j in range(i+1, nProcess):
+                    rez[i][j] = ee.mi(xx[i], yy[j])
+            rez += rez.T
+
+        return rez

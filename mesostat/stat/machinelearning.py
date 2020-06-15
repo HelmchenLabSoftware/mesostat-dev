@@ -4,6 +4,7 @@ from scipy.stats import hypergeom
 
 from mesostat.stat.stat import rand_bool_perm
 
+
 def _get_nan_rows(x):
     if not np.issubdtype(x.dtype, np.number):
         return np.zeros(x.shape).astype(bool)
@@ -12,12 +13,12 @@ def _get_nan_rows(x):
     else:
         return np.any(np.isnan(x), axis=tuple(list(range(1, x.ndim))))
 
+
 # Drop all rows for which there is at least one NAN value in X or Y
-def drop_nan_rows(x, y):
-    nanX = _get_nan_rows(x)
-    nanY = _get_nan_rows(y)
-    goodIdx = (~nanX) & (~nanY)
-    return x[goodIdx], y[goodIdx]
+def drop_nan_rows(lst):
+    nonNanLst = [~_get_nan_rows(x) for x in lst]
+    goodIdxs = np.logical_and.reduce(nonNanLst)
+    return [x[goodIdxs] for x in lst]
 
 
 def _slice_train_test(x, iStart, iEnd):
@@ -108,7 +109,7 @@ def binary_classifier(x, y, method="kfold", balancing=False):
     assert len(set(y)) == 2, "Labels must be binary"
 
     # Drop NAN values
-    xNoNan, yNoNan = drop_nan_rows(x, y)
+    xNoNan, yNoNan = drop_nan_rows([x, y])
 
     # map labels to binary variable
     nData = len(yNoNan)

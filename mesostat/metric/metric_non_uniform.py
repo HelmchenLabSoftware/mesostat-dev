@@ -1,14 +1,14 @@
 import numpy as np
 
 from mesostat.stat.stat import mu_std
-from mesostat.metric.corr import corr_3D, avg_corr_3D, cross_corr_non_uniform_3D
-from mesostat.metric.autocorr import autocorr_3D, autocorr_d1_3D, autocorr_trunc_1D
-from mesostat.metric.npeet import average_entropy, average_predictive_info_non_uniform
-from mesostat.metric.autoregression import ar1_coeff, ar1_testerr, ar_testerr
+import mesostat.metric.corr as corr
+from mesostat.metric.autocorr import autocorr_trunc_1D, autocorr_d1_3D_non_uniform
+import mesostat.metric.npeet as npeet_wrapper
+import mesostat.metric.autoregression as autoregression
 import mesostat.metric.sequence as sequence
-from mesostat.metric.stretch import stretch_basis_projection_non_uniform
+import mesostat.metric.stretch as stretch
 
-from mesostat.utils.arrays import test_uniform_dimension
+from mesostat.utils.arrays import test_uniform_dimension, get_list_shapes
 from mesostat.utils.sweep import SweepGeneratorNonUniform
 from mesostat.utils.parallel import GenericMapper
 
@@ -27,37 +27,42 @@ class MetricCalculatorNonUniform:
         self.metricDict = {
             "mean":                 lambda dataLst, settings : self._nanmean(dataLst, settings),
             "std":                  lambda dataLst, settings : self._nanstd(dataLst, settings),
-            "corr":                 lambda dataLst, settings : self._hstack_wrapper(corr_3D, dataLst, settings),
-            "avgcorr":              lambda dataLst, settings : self._hstack_wrapper(avg_corr_3D, dataLst, settings),
-            "avg_entropy":          lambda dataLst, settings : self._hstack_wrapper(average_entropy, dataLst, settings),
-            "avg_PI":               average_predictive_info_non_uniform,
-            "crosscorr":            cross_corr_non_uniform_3D,
-            "autocorr":             self._autocorr,
-            "autocorr_d1":          self._autocorr_d1,
-            # "ar1_coeff":            ar1_coeff,
-            # "ar1_testerr":          ar1_testerr,
-            # "ar_testerr":           ar_testerr,
+            "corr":                 corr.corr_3D_non_uniform,
+            "avgcorr":              corr.avg_corr_3D_non_uniform,
+            "avg_entropy":          npeet_wrapper.average_entropy_3D_non_uniform,
+            "avg_PI":               npeet_wrapper.average_predictive_info_non_uniform,
+            "crosscorr":            corr.cross_corr_non_uniform_3D,
+            "autocorr":             autocorr_trunc_1D,
+            "autocorr_d1":          autocorr_d1_3D_non_uniform,
+            "ar1_coeff":            autoregression.ar1_coeff_non_uniform,
+            "ar1_testerr":          autoregression.ar1_testerr_non_uniform,
+            "ar_testerr":           autoregression.ar_testerr_non_uniform,
+            "mar1_coeff":           autoregression.mar1_coeff_non_uniform,
+            "mar1_testerr":         autoregression.mar1_testerr_non_uniform,
+            "mar_testerr":          autoregression.mar_testerr_non_uniform,
+            "mar_inp_testerr":      autoregression.mar_inp_testerr_non_uniform,
+            "ord_mean":             sequence.temporal_mean_3D_non_uniform,
             "ord_moments":          sequence.temporal_moments_3D_non_uniform,
             "ord_binary":           sequence.bivariate_binary_orderability_3D_non_uniform,
             "ord_binary_avg":       sequence.avg_bivariate_binary_orderability_3D_non_uniform,
             "ord_student":          sequence.bivariate_student_orderability_3D_non_uniform,
             "ord_student_avg":      sequence.avg_bivariate_student_orderability_3D_non_uniform,
-            "temporal_basis":       stretch_basis_projection_non_uniform,
+            "temporal_basis":       stretch.stretch_basis_projection_non_uniform,
+            "resample_fixed":       stretch.resample_non_uniform,
             "generic_metric":       self._generic_metric
         }
 
         # Initialize composite metrics library
         self.compositeMetricDict = {
             "avg_entropy_1D" :      self._avg_entropy_1D,
-            "avg_PI_1D":            self._avg_PI_1D
+            "avg_PI_1D":            self._avg_PI_1D,
+            "avg_TC_1D":            self._avg_TC,
+            "avg_TPI_1D":           self._avg_TPI,
         }
-
 
     def set_data(self, dataLst, zscoreChannel=False):
         assert np.all([d.ndim == 2 for d in dataLst]), "For each trial must have exactly 2D array of shape [nChannel, nSample]"
-        shapeArr = np.array([d.shape for d in dataLst]).T
-        # assert np.all(shapeArr > 0), "All dimensions must be non-zero"
-        self.nChannelMatch = np.all(shapeArr[0] == shapeArr[0][0])
+        self.nChannelMatch = len(get_list_shapes(dataLst, axis=0)) == 1
 
         # zscore whole data array if requested
         if zscoreChannel:
@@ -88,7 +93,7 @@ class MetricCalculatorNonUniform:
             raise ValueError("Trying to sweep over channels, but channel number varies across trials")
 
         if metricName in self.compositeMetricDict.keys():
-            return self.compositeMetricDict[metricName](dimOrderTrg, metricSettings, sweepSettings)
+            return self.compositeMetricDict[metricName](dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
 
         # Pass additional fixed settings to the metric function
         if metricSettings is None:
@@ -100,7 +105,7 @@ class MetricCalculatorNonUniform:
             # Drop all repetitions for which the data is degenerate
             dataLstDrop = [data for data in dataLst if np.prod(data.shape) != 0]
 
-            if len(dataLstDrop):
+            if len(dataLstDrop) > 0:
                 return metricFunc(dataLstDrop, {**settings, **metricSettings})
             else:
                 return None
@@ -108,10 +113,6 @@ class MetricCalculatorNonUniform:
         sweepGen = SweepGeneratorNonUniform(self.dataLst, dimOrderTrg, settingsSweep=sweepSettings)
 
         return sweepGen.unpack(self.mapper.mapMultiArg(wrappedFunc, sweepGen.iterator()))
-
-    def _hstack_wrapper(self, metricFunc, dataLst, settings):
-        test_uniform_dimension(dataLst, settings["dim_order"], "p")
-        return metricFunc(np.hstack(dataLst), settings)
 
     # Metric defined by user
     def _generic_metric(self, data, settings):
@@ -124,13 +125,6 @@ class MetricCalculatorNonUniform:
     def _nanstd(self, dataLst, settings):
         flatArr = np.hstack([data.flatten() for data in dataLst])
         return np.nanstd(flatArr)
-
-    def _autocorr(self, dataLst, settings):
-        return autocorr_trunc_1D([autocorr_3D(data, settings) for data in dataLst])
-
-    # TODO: If ever important, a better method may be to combine data for the estimate
-    def _autocorr_d1(self, dataLst, settings):
-        return np.nanmean([autocorr_d1_3D(data, settings) for data in dataLst])
 
     # Calculate entropy averaged over all channels
     def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
