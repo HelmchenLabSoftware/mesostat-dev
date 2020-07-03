@@ -41,6 +41,11 @@ class SweepGenerator:
         :param settingsSweep:   Optional. A dictionary "name" -> list. In addition to dimension sweep, this algorithm
                                    can sweep over parameters of the method. Each parameter is given by its name and
                                    a list of its possible values.
+
+        Unpacking Conventions:
+            * Output dimensions are always in the order dimOrderTrg, followed by dimensions of single metric output if metric is non-scalar
+            * If timeWindow is used, sample dimension must be provided in dimOrderTrg. The sample sweep will appear in the sample dimension
+            * If settingsIterator is used, the settings dimensions will go immediately after target dimensions in alphabetic order
         '''
         self.data = data
         self.dimOrderSrc = dimOrderSrc
@@ -48,39 +53,39 @@ class SweepGenerator:
         self.timeWindow = timeWindow
         self.settingsSweep = settingsSweep
 
-        if self.timeWindow is None:
-            self.dimOrderTrgFinal = dimOrderTrg
-        else:
-            assert "s" in dimOrderTrg, "If window iteration selected, target dimension must include samples"
 
+        if self.timeWindow is None:
+            self.dimOrderTrgPlainSweep = dimOrderTrg
+        else:
             # Samples dimension will be sweeped over by window sweeper, there is no need to sweep over it a second
             # time using a regular sweeper. However, it is sitll important that samples dimension is provided in the
             # dimOrderTrg, because we need to know to which position to transpose it at the unpacking stage
-            self.dimOrderTrg = unique_subtract(dimOrderTrg, "s")
-            self.dimOrderTrgFinal = "s" + self.dimOrderTrg
+            assert "s" in dimOrderTrg, "If window iteration selected, target dimension must include samples"
+            self.dimOrderTrgPlainSweep = unique_subtract(dimOrderTrg, "s")
 
         # Find number of axis and settings to iterate over
-        self.nAxis = len(self.dimOrderTrg)
+        self.nAxisPlainIter = len(self.dimOrderTrgPlainSweep)
 
         # Find axis to iterate over
-        self.iterDataAxis = tuple([i for i,e in enumerate(self.dimOrderSrc) if e in self.dimOrderTrg])
+        # self.iterPlainAxis = tuple([i for i, e in enumerate(self.dimOrderSrc) if e in self.dimOrderTrgPlainSweep])
+        self.iterPlainAxis = tuple([self.dimOrderSrc.index(e) for e in self.dimOrderTrgPlainSweep])
 
         # Find shapes of iterated axes
-        iterDataShape = tuple([self.data.shape[i] for i in self.iterDataAxis])
+        plainIterAxisShape = tuple([self.data.shape[i] for i in self.iterPlainAxis])
 
         # Find shapes of iterated settings
         iterSettingsShape = tuple([len(v) for v in self.settingsSweep.values()]) if self.settingsSweep is not None else tuple()
 
         # Combine data shapes and settings shapes for joint iteration
-        self.iterTotalShape = iterDataShape + iterSettingsShape
+        self.iterInternalShape = plainIterAxisShape + iterSettingsShape
 
         if self.timeWindow is None:
-            self.iterTotalShapeFinal = self.iterTotalShape
+            self.iterTotalShape = self.iterInternalShape
         else:
             idxSampleAxis = self.dimOrderSrc.index("s")
             nSample = self.data.shape[idxSampleAxis]
             nSampleWindowed = nSample - self.timeWindow + 1
-            self.iterTotalShapeFinal = (nSampleWindowed, ) + self.iterTotalShape
+            self.iterTotalShape = (nSampleWindowed,) + self.iterInternalShape
 
 
     def _plain_iterator(self, data=None):
@@ -99,20 +104,20 @@ class SweepGenerator:
         if data is None:
             data = self.data
 
-        dimOrderTrue = unique_subtract(self.dimOrderSrc, self.dimOrderTrg)
+        dimOrderSrcRemainder = unique_subtract(self.dimOrderSrc, self.dimOrderTrgPlainSweep)
 
-        if len(self.iterTotalShape) == 0:
+        if len(self.iterInternalShape) == 0:
             yield data, {}
         else:
-            outerIterator = non_uniform_base_arithmetic_iterator(self.iterTotalShape)
+            outerIterator = non_uniform_base_arithmetic_iterator(self.iterInternalShape)
 
             for iND in outerIterator:
-                iNDData = iND[:self.nAxis]
-                iNDSettings = iND[self.nAxis:]
+                iNDData = iND[:self.nAxisPlainIter]
+                iNDSettings = iND[self.nAxisPlainIter:]
 
                 # Take data along iterated axes, and augment fake axes instead, so that data is always the same shape
-                dataThis = numpy_take_all(data, self.iterDataAxis, iNDData)
-                dataThis = numpy_transpose_byorder(dataThis, dimOrderTrue, self.dimOrderSrc, augment=True)
+                dataThis = numpy_take_all(data, self.iterPlainAxis, iNDData)
+                dataThis = numpy_transpose_byorder(dataThis, dimOrderSrcRemainder, self.dimOrderSrc, augment=True)
 
                 if self.settingsSweep is None:
                     yield dataThis, {}
@@ -146,25 +151,26 @@ class SweepGenerator:
             return rezLst[0]
 
         rezShape = rezLst[0].shape
-        rezArr = np.array(rezLst).reshape(self.iterTotalShapeFinal + rezShape)
+        rezArr = np.array(rezLst).reshape(self.iterTotalShape + rezShape)
 
-        # After sweep is done, the order of the sweep axis may not match the requested order in the dimOrderTrg
-        # We may need to transpose to account for that
-        if len(self.dimOrderTrgFinal) < 2:
-            return rezArr  # If the iterated dimension is less than 2, there is only 1 possible outcome anyway
+        # At this point, the resulting array should already be in the correct order, namely
+        #  dimOrdTrg + settingsSweep + resultShape
+        # The only exception is for the window sweep. In this case, samples go first, and we need to move them where they belong
+        # Even if there is a window sweep, if it is the only parameter of the plain iterator, there is nothing to change
+        if (len(self.dimOrderTrg) < 2) or (self.timeWindow is None):
+            return rezArr
         else:
-            postDimOrder = "".join([e for e in self.dimOrderSrc if e in self.dimOrderTrgFinal])
+            dimOrderIntermediate = "s" + self.dimOrderTrgPlainSweep
 
-            # The result may be non-scalar, we need to only transpose the loop dimensions, not the result dimensions
-            # Thus, add fake dimensions for result dimensions
-            nFakeDim = rezArr.ndim - self.nAxis
-            fakeDim = "".join([str(i) for i in range(nFakeDim)])
+            # We only want to transpose the target dimensions, leaving the remaining dimensions as they are
+            transposedDims = tuple(perm_map_str(dimOrderIntermediate, self.dimOrderTrg))
+            trailingDims = tuple(range(len(self.dimOrderTrg), rezArr.ndim))
 
-            return rezArr.transpose(perm_map_str(postDimOrder + fakeDim, self.dimOrderTrgFinal + fakeDim))
+            return rezArr.transpose(transposedDims + trailingDims)
 
 
     def iterator_dimension_names(self):
-        dataDimOrder = list(self.dimOrderTrg)
+        dataDimOrder = list(self.dimOrderTrgPlainSweep)
         settingsDimOrder = list(self.settingsSweep) if self.settingsSweep is not None else []
         return dataDimOrder + settingsDimOrder
 

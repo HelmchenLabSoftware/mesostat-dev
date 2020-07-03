@@ -107,7 +107,7 @@ def cross_corr_3D(data, settings):
 
     # Only interested in x-y correlations, crop x-x and y-y
     est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
-    return corr_2D(xx, yy, est=est)[nNode:, :nNode]
+    return corr_2D(xx, yy, est=est)[:nNode, nNode:]
 
 
 def cross_corr_non_uniform_3D(dataLst, settings):

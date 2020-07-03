@@ -69,6 +69,11 @@ def diagonal_dominance(M):
     return diagDomMu, diagDomStd
 
 
+# Number of connections. In case of weighted graph,
+def weight(M):
+    return np.sum(offdiag(M))
+
+
 # IN-DEGREE: Number of incoming connections. In weighted version sum of incoming weights
 def degree_in(M):
     return np.sum(offdiag_norm(M), axis=0)

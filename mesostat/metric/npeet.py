@@ -11,7 +11,7 @@ def average_entropy_3D(data, settings):
     dataCanon = numpy_transpose_byorder(data, 'rps', 'srp')
     dataFlat = numpy_merge_dimensions(dataCanon, 0, 2)
     nSample, nProcess = dataFlat.shape
-    if nSample < 2 * nProcess:
+    if nSample < 5 + 5 * nProcess:
         # If there are too few samples, there is no point to calculate anything
         return np.array(np.nan)
     else:
@@ -30,7 +30,7 @@ def average_predictive_info(data, settings):
     x, y = drop_nan_rows(split3D(data, settings['max_lag']))
 
     nSample, nProcess = x.shape
-    if nSample < 2 * nProcess:
+    if nSample < 5 + 5 * nProcess:
         # If there are too few samples, there is no point to calculate anything
         return np.array(np.nan)
     else:
@@ -86,8 +86,8 @@ def cross_mi_3D(data, settings):
         else:
             # Optimization - take advantage of symmetry
             for i in range(nProcess):
-                for j in range(i+1, nProcess):
+                for j in range(i, nProcess):
                     rez[i][j] = ee.mi(xx[i], yy[j])
-            rez += rez.T
+                    rez[j][i] = rez[i][j]
 
         return rez

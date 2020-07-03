@@ -2,8 +2,9 @@ from matplotlib import colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, haveTicks=False):
-    img = ax.imshow(data)
+def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, haveTicks=False,
+           cmap=None, extent=None):
+    img = ax.imshow(data, cmap=cmap, extent=extent)
     if xlabel is not None:
         ax.set_xlabel(xlabel)
     if ylabel is not None:

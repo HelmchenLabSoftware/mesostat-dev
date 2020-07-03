@@ -102,7 +102,7 @@ class MetricCalculator:
     def _generic_metric(self, data, settings):
         return settings["metric"](data, settings)
 
-    # Calculate entropy averaged over all channels
+    # Calculate channel-wise entropy averaged over all channels
     def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
         if "p" in dimOrderTrg:
             raise ValueError("Parallelizing over processes not applicable for this metric")
