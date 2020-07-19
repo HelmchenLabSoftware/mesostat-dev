@@ -25,8 +25,9 @@ class MetricCalculatorNonUniform:
 
         # Initialize metric library
         self.metricDict = {
-            "mean":                 lambda dataLst, settings : self._nanmean(dataLst, settings),
-            "std":                  lambda dataLst, settings : self._nanstd(dataLst, settings),
+            "sum":                  lambda dataLst, settings : self._flat_reduce(np.nansum, dataLst),
+            "mean":                 lambda dataLst, settings : self._flat_reduce(np.nanmean, dataLst),
+            "std":                  lambda dataLst, settings : self._flat_reduce(np.nanstd, dataLst),
             "corr":                 corr.corr_3D_non_uniform,
             "avgcorr":              corr.avg_corr_3D_non_uniform,
             "avg_entropy":          npeet_wrapper.average_entropy_3D_non_uniform,
@@ -61,6 +62,7 @@ class MetricCalculatorNonUniform:
         }
 
     def set_data(self, dataLst, zscoreChannel=False):
+        assert len(dataLst) > 0, "Attempted to set data with zero trials"
         assert np.all([d.ndim == 2 for d in dataLst]), "For each trial must have exactly 2D array of shape [nChannel, nSample]"
         self.nChannelMatch = len(get_list_shapes(dataLst, axis=0)) == 1
 
@@ -69,11 +71,13 @@ class MetricCalculatorNonUniform:
             if not self.nChannelMatch:
                 raise ValueError("Trying to ZScore data, where number of channels varies over repetitions")
 
-            muCh, stdCh = mu_std(np.hstack(dataLst), axis=1)
+            data2D = np.hstack(dataLst)
+            muCh, stdCh = mu_std(data2D, axis=1)
             muCh = muCh[:, None]
             stdCh = stdCh[:, None]
 
             if np.any(stdCh < 1.0e-10):
+                print("nTrials", len(dataLst), "concatShape", data2D.shape, stdCh)
                 raise ValueError("Attempting to ZScore a channel with zero variance")
 
             self.dataLst = [(d - muCh) / stdCh for d in dataLst]
@@ -118,13 +122,8 @@ class MetricCalculatorNonUniform:
     def _generic_metric(self, data, settings):
         return settings["metric"](data, settings)
 
-    def _nanmean(self, dataLst, settings):
-        flatArr = np.hstack([data.flatten() for data in dataLst])
-        return np.nanmean(flatArr)
-
-    def _nanstd(self, dataLst, settings):
-        flatArr = np.hstack([data.flatten() for data in dataLst])
-        return np.nanstd(flatArr)
+    def _flat_reduce(self, func, dataLst):
+        return func(np.hstack([data.flatten() for data in dataLst]))
 
     # Calculate entropy averaged over all channels
     def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):

@@ -211,7 +211,7 @@ class SweepGeneratorNonUniform:
     # Goal is to convert sweep into expected dimensions, while keeping result intact
     def unpack(self, rezLst):
         if len(rezLst) == 1:
-            return np.array(rezLst)
+            return np.array(rezLst)[0]
 
         # Check shapes of all results are the same, and fill in None's where data was illegal
         # assert np.all([rez.shape == rezLst[0].shape for rez in rezLst])

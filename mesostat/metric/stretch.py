@@ -5,9 +5,10 @@ from mesostat.utils.signals import resample
 
 
 # Evaluate first few projections to Legendre basis
-def basis_projection_1D(data):
+def basis_projection_1D(data, settings):
     nSample = len(data)
-    bp = BasisProjector(nSample)
+    order = settings["basisOrder"] if "basisOrder" in settings else 5
+    bp = BasisProjector(nSample, order=order)
     return bp.project(data)
 
 
@@ -18,7 +19,7 @@ def stretch_basis_projection(data, settings):
     # Average all axis except samples
     dataAvg = np.nanmean(data, axis=(0, 1))
 
-    return basis_projection_1D(dataAvg)
+    return basis_projection_1D(dataAvg, settings)
 
 
 def stretch_basis_projection_non_uniform(dataLst, settings):
@@ -28,7 +29,7 @@ def stretch_basis_projection_non_uniform(dataLst, settings):
             raise ValueError("Expected more than 1 timestep")
 
         data1D = np.nanmean(data2D, axis=0)
-        rez += [basis_projection_1D(data1D)]
+        rez += [basis_projection_1D(data1D, settings)]
 
     return np.mean(rez, axis=0)
 

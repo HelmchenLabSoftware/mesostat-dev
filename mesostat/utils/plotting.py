@@ -1,6 +1,9 @@
+import numpy as np
 from matplotlib import colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import mesostat.utils.pandas_helper as pandas_helper
 
 def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, haveTicks=False,
            cmap=None, extent=None):
@@ -60,3 +63,24 @@ def imshowAddColorBar(fig, ax, img):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     fig.colorbar(img, cax=cax, orientation='vertical')
+
+
+# Plot stacked barplot from pandas dataframe
+# Xkey and Ykey specify columns that will be displayed on x and y axis
+# The remaining columns will be swept over by considering all their permutations
+#    * It is assumed that all the remaining columns of the dataframe are countable (e.g. not float)
+def stacked_bar_plot(ax, df, xKey, yKey):
+    sweepSet = set(df.columns) - {xKey, yKey}
+    sweepVals = {key: list(set(df[key])) for key in sweepSet}
+    sweepDF = pandas_helper.outer_product_df(sweepVals)
+
+    bottom = np.zeros(len(set(df[xKey])))
+    for idx, row in sweepDF.iterrows():
+        queryDict = dict(row)
+        dfThis = pandas_helper.get_rows_colvals(df, queryDict)
+        ax.bar(dfThis[xKey], dfThis[yKey], bottom=bottom, label=str(list(queryDict.values())))
+        bottom += np.array(dfThis[yKey])
+
+    ax.set_xlabel(xKey)
+    ax.set_ylabel(yKey)
+    ax.legend()

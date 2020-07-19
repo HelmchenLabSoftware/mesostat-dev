@@ -30,6 +30,7 @@ class MetricCalculator:
 
         # Initialize metric library
         self.metricDict = {
+            "sum":                  self._nansum,
             "mean":                 self._nanmean,
             "std":                  self._nanstd,
             "autocorr":             autocorr_3D,
@@ -85,6 +86,9 @@ class MetricCalculator:
             self.data = zscore(dataCanon, axisZScore)
         else:
             self.data = dataCanon
+
+    def _nansum(self, data, settings):
+        return np.nansum(data)
 
     def _nanmean(self, data, settings):
         return np.nanmean(data)
