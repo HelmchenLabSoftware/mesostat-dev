@@ -24,6 +24,17 @@ def cycling(x, axis=0):
     return np.take(x, idxCycle, axis=axis)
 
 
+def get_sample_function(name):
+    if name == "permutation":
+        return permutation
+    elif name == "bootstrap":
+        return bootstrap
+    elif name == "cycling":
+        return cycling
+    else:
+        raise ValueError("Unexpected resampling function", name)
+
+
 def resample_monad(f, x, sampleFunc, nSample=2000):
     '''
     :param f: Test statistic of 1 variable
@@ -51,6 +62,7 @@ def resample_dyad_union(f,x,y, sampleFunc, nSample=2000):
     M, N = x.shape[0], y.shape[0]
     fmerged = lambda xy : f(xy[:M], xy[M:])
     return resample_monad(fmerged, np.concatenate([x, y], axis=0), sampleFunc, nSample=nSample)
+
 
 # Dyad         ::: f is a function of two variables
 # Individual   ::: X and Y are resampled from their union
