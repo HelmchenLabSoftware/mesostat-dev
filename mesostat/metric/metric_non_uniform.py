@@ -14,7 +14,6 @@ from mesostat.utils.parallel import GenericMapper
 
 '''
 TODO:
-    * Add orderability
     * Research other temporal statistics
 '''
 

@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mesostat.stat.htests import difference_test
+from mesostat.stat.permtests import difference_test
 from mesostat.stat.hteststatistics import cranksum
 
 A = np.random.uniform(0.5,2,100)#np.abs(np.random.normal(0,1,100))

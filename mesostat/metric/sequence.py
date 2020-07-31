@@ -98,8 +98,6 @@ def temporal_moments_3D(data, settings, axis=(0, 1)):
     if data.shape[2] < 2:
         raise ValueError("Must have more than one timestep")
 
-
-
     # [nTrial, nChannel, 2], where 2 stands for (mean, var)
     stdFilter = None if 'stdFilter' not in settings.keys() else settings['stdFilter']
     moments = [[_temporal_moments_1D(d, stdFilter=stdFilter) for d in dChannel] for dChannel in data]

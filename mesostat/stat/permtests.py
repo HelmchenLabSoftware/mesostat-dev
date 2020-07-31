@@ -1,6 +1,13 @@
 import numpy as np
 import mesostat.stat.resampling as resampling
 
+'''
+TODO:
+[?] Existing library for permutation testing
+[ ] Accelerate testing by early stopping
+[ ] Check if standard non-parametric test for equal variances exists (so far looks like active area of research)
+'''
+
 
 # Evaluate in which percentile of the test data does the true value lay
 # pvalL - probability of getting a random value at least as small as true

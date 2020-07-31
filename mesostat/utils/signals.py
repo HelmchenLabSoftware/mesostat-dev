@@ -139,6 +139,18 @@ def resample(x1, y1, x2, param):
     return y2
 
 
+# Wrapper without x-coordinates
+# Resamples dataset to the same interval but different discretization
+def resample_stretch(y1, n2):
+    n1 = len(y1)
+    x1 = np.linspace(0, 1, n1)
+    x2 = np.linspace(0, 1, n2)
+    if n1 <= n2:
+        return resample(x1, y1, x2, {"method" : "interpolative"})
+    else:
+        return resample(x1, y1, x2, {"method": "gaussian"})
+
+
 # Resample all arrays to the overlapping range using piecewise-linear interpolation
 def resample_shortest_linear(xLst2D, yLst2D, timestep=None, assume_same=True):
     '''

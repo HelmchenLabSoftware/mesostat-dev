@@ -15,12 +15,23 @@ from mesostat.utils.parallel import GenericMapper
 
 '''
 TODO:
+    * Optimization: Implement fft autocorrelation, its faster and more or less same accuracy
     * Have some adequate solution for extra axis for methods that return non-scalars. Especially dynamics like PI, TE
     * Copy over connectomics metrics
     * H5 I/O For data results
-    * Add MI, TE from IDTxl
-    * Add orderability
     * Research other temporal statistics
+    
+    * Optimization: Implement optional hybrid parallelization for channels.
+      In some cases, parallelizing over channels inside metric is more efficient than a parallel python for loop.
+      In particular, if numpy array functions can be used to calc channels, it is faster than python looping
+      
+      Metrics relevant: sum, mean, std, autocorr_d1, temporal_basis
+      Algorithm:
+        * In metric3D, check if ("p" in dimOrdTrg) and (supportsHybrid(metricName))
+          * If yes, exclude "p" from dimOrdTrgEff, and provide hybrid flag
+          * If no, complain that hybrid flag requested but not available
+        * In metric, if have hybrid flag, use alternative implementation
+        * In sweep unpack, transpose result to bring processes back to expected position 
 '''
 
 class MetricCalculator:
