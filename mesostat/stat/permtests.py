@@ -33,8 +33,10 @@ def paired_test(f, x, y, nSample, sampleFunction="permutation"):
 # Tests whether a certain function is significantly different for X as opposed to Y values
 # The values of X and Y are resampled from the shared pool
 def difference_test(f, x, y, nSample, sampleFunction="resample"):
-    f_diff = lambda x, y: f(x) - f(y)
+    assert len(x) > 1, "Must have more than 1 sample to permute"
+    assert len(y) > 1, "Must have more than 1 sample to permute"
+
     fSample = resampling.get_sample_function(sampleFunction)
-    fTrue = f_diff(x, y)
-    fTestArr = resampling.resample_dyad_union(f_diff, x, y, fSample, nSample=nSample)
+    fTrue = f(x, y)
+    fTestArr = resampling.resample_dyad_union(f, x, y, fSample, nSample=nSample)
     return percentile_twosided(fTrue, fTestArr)

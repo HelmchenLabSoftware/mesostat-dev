@@ -65,10 +65,8 @@ def resample_dyad_union(f,x,y, sampleFunc, nSample=2000):
 
 
 # Dyad         ::: f is a function of two variables
-# Individual   ::: X and Y are resampled from their union
+# Individual   ::: X and Y are resampled by permuting their relative order
 def resample_dyad_individual(f,x,y, sampleFunc, nSample=2000, resampleY=False):
-    M, N = x.shape[0], y.shape[0]
-
     if resampleY:
         fEff = lambda x, y: f(sampleFunc(x), sampleFunc(y))
     else:

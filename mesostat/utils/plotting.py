@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib import colors
+from matplotlib import colors, colorbar
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -63,6 +63,14 @@ def imshowAddColorBar(fig, ax, img):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     fig.colorbar(img, cax=cax, orientation='vertical')
+
+
+# Adds fake colorbar to any axis. That colorbar will linearly interpolate an existing colormap
+def imshowAddFakeColorBar(fig, ax, cmap, vmin=0, vmax=1):
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes('right', size='5%', pad=0.05)
+    norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    cb1 = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='vertical')
 
 
 # Plot stacked barplot from pandas dataframe
