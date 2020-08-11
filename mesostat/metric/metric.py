@@ -8,6 +8,7 @@ import mesostat.metric.npeet as npeet
 import mesostat.metric.autoregression as autoregression
 from mesostat.metric.stretch import stretch_basis_projection
 import mesostat.metric.sequence as sequence
+import mesostat.metric.pca as pca
 from mesostat.metric.idtxl import idtxl_single_target, idtxl_network
 
 from mesostat.utils.sweep import SweepGenerator
@@ -41,16 +42,10 @@ class MetricCalculator:
 
         # Initialize metric library
         self.metricDict = {
+            # SCALAR METRICS
             "sum":                  self._nansum,
             "mean":                 self._nanmean,
             "std":                  self._nanstd,
-            "autocorr":             autocorr_3D,
-            "corr":                 corr_3D,
-            "crosscorr":            cross_corr_3D,
-            "BivariateMI":          lambda data, settings : self._TE("BivariateMI", data, settings),
-            "BivariateTE":          lambda data, settings: self._TE("BivariateTE", data, settings),
-            "MultivariateMI":       lambda data, settings: self._TE("MultivariateMI", data, settings),
-            "MultivariateTE":       lambda data, settings: self._TE("MultivariateTE", data, settings),
             "autocorr_d1":          autocorr_d1_3D,
             "ar1_coeff":            autoregression.ar1_coeff,
             "ar1_testerr":          autoregression.ar1_testerr,
@@ -62,7 +57,19 @@ class MetricCalculator:
             "avgcorr":              avg_corr_3D,
             "avg_entropy":          npeet.average_entropy_3D,
             "avg_PI":               npeet.average_predictive_info,
+            "rank_smooth":          pca.rank_smooth3D,
+
+            # FUNCTIONAL CONNECTIVITY METRICS
+            "corr":                 corr_3D,
+            "crosscorr":            cross_corr_3D,
             "cross_MI":             npeet.cross_mi_3D,
+            "BivariateMI":          lambda data, settings : self._TE("BivariateMI", data, settings),
+            "BivariateTE":          lambda data, settings: self._TE("BivariateTE", data, settings),
+            "MultivariateMI":       lambda data, settings: self._TE("MultivariateMI", data, settings),
+            "MultivariateTE":       lambda data, settings: self._TE("MultivariateTE", data, settings),
+
+            # TEMPORAL METRICS
+            "autocorr":             autocorr_3D,
             "ord_mean":             sequence.temporal_mean_3D,
             "ord_moments":          sequence.temporal_moments_3D,
             "ord_binary":           sequence.bivariate_binary_orderability_3D,
@@ -70,6 +77,7 @@ class MetricCalculator:
             "ord_student":          sequence.bivariate_student_orderability_3D,
             "ord_student_avg":      sequence.avg_bivariate_student_orderability_3D,
             "temporal_basis":       stretch_basis_projection,
+
             "generic_metric":       self._generic_metric
         }
 

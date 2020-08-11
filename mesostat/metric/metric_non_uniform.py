@@ -7,6 +7,7 @@ import mesostat.metric.npeet as npeet_wrapper
 import mesostat.metric.autoregression as autoregression
 import mesostat.metric.sequence as sequence
 import mesostat.metric.stretch as stretch
+import mesostat.metric.pca as pca
 
 from mesostat.utils.arrays import test_uniform_dimension, get_list_shapes
 from mesostat.utils.sweep import SweepGeneratorNonUniform
@@ -24,15 +25,10 @@ class MetricCalculatorNonUniform:
 
         # Initialize metric library
         self.metricDict = {
+            # SCALAR METRICS
             "sum":                  lambda dataLst, settings : self._flat_reduce(np.nansum, dataLst),
             "mean":                 lambda dataLst, settings : self._flat_reduce(np.nanmean, dataLst),
             "std":                  lambda dataLst, settings : self._flat_reduce(np.nanstd, dataLst),
-            "corr":                 corr.corr_3D_non_uniform,
-            "avgcorr":              corr.avg_corr_3D_non_uniform,
-            "avg_entropy":          npeet_wrapper.average_entropy_3D_non_uniform,
-            "avg_PI":               npeet_wrapper.average_predictive_info_non_uniform,
-            "crosscorr":            corr.cross_corr_non_uniform_3D,
-            "autocorr":             autocorr_trunc_1D,
             "autocorr_d1":          autocorr_d1_3D_non_uniform,
             "ar1_coeff":            autoregression.ar1_coeff_non_uniform,
             "ar1_testerr":          autoregression.ar1_testerr_non_uniform,
@@ -41,6 +37,17 @@ class MetricCalculatorNonUniform:
             "mar1_testerr":         autoregression.mar1_testerr_non_uniform,
             "mar_testerr":          autoregression.mar_testerr_non_uniform,
             "mar_inp_testerr":      autoregression.mar_inp_testerr_non_uniform,
+            "avgcorr":              corr.avg_corr_3D_non_uniform,
+            "avg_entropy":          npeet_wrapper.average_entropy_3D_non_uniform,
+            "avg_PI":               npeet_wrapper.average_predictive_info_non_uniform,
+            "rank_smooth":          pca.rank_smooth3D,
+
+            # FUNCTIONAL CONNECTIVITY
+            "corr":                 corr.corr_3D_non_uniform,
+            "crosscorr":            corr.cross_corr_non_uniform_3D,
+            "autocorr":             autocorr_trunc_1D,
+
+            # TEMPORAL METRICS
             "ord_mean":             sequence.temporal_mean_3D_non_uniform,
             "ord_moments":          sequence.temporal_moments_3D_non_uniform,
             "ord_binary":           sequence.bivariate_binary_orderability_3D_non_uniform,
@@ -49,6 +56,7 @@ class MetricCalculatorNonUniform:
             "ord_student_avg":      sequence.avg_bivariate_student_orderability_3D_non_uniform,
             "temporal_basis":       stretch.stretch_basis_projection_non_uniform,
             "resample_fixed":       stretch.resample_non_uniform,
+
             "generic_metric":       self._generic_metric
         }
 
