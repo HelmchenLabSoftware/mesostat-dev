@@ -53,9 +53,11 @@ def autocorr_d1_3D(data, settings):
     if data.shape[2] <= 1:
         raise ValueError("Autocorrelation requires more than 1 timestep")
 
-    dataZ = zscore(data)
-    dataZpre  = dataZ[:,:,:-1].flatten()
-    dataZpost = dataZ[:,:,1:].flatten()
+    # dataZ = zscore(data)
+    # dataZpre  = dataZ[:,:,:-1].flatten()
+    # dataZpost = dataZ[:,:,1:].flatten()
+    dataZpre = zscore(data[:,:,:-1].flatten())
+    dataZpost = zscore(data[:, :, 1:].flatten())
     return np.nanmean(dataZpre * dataZpost)
 
 
