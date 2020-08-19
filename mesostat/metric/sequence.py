@@ -89,12 +89,12 @@ def _temporal_moments_1D(y, stdFilter=None):
     if np.any(np.isnan(p)):
         raise ValueError("Ups")
 
-    mu, std = discrete_mean_var(x, p)
+    mu, var = discrete_mean_var(x, p)
 
     # Symmetry breaking: If we get almost degenerate datasets, it is somehow still possible to get exactly the same means
     # To avoid this, add very weak random noise to the metric so that
     mu += np.random.normal(0, 1.0E-7)
-    return mu, std
+    return mu, var
 
 
 def temporal_moments_3D(data, settings, axis=(0, 1), noAvg=False):
@@ -106,7 +106,7 @@ def temporal_moments_3D(data, settings, axis=(0, 1), noAvg=False):
     moments = [[_temporal_moments_1D(d, stdFilter=stdFilter) for d in dChannel] for dChannel in data]
 
     if noAvg:
-        return moments
+        return np.array(moments)
     else:
         # Compute Mean of the data and Variance of the data (NOT variance of the mean!!!)
         # Mean of gaussian random variables is given by (mu, var) = (mean(mu_i), mean(var_i))
@@ -123,26 +123,30 @@ def temporal_moments_3D_non_uniform(dataLst, settings, axis=(0, 1), noAvg=False)
         rezLst += [[_temporal_moments_1D(d, stdFilter=stdFilter) for d in data2D]]
 
     if noAvg:
+        # [nTrial x nChannel x 2]
         return np.array(rezLst)
     else:
         return np.mean(rezLst, axis=axis)
 
 
-def temporal_mean_3D(data, settings):
-    return temporal_moments_3D(data, settings)[0]
+def temporal_mean_3D(data, settings, axis=(0,1), noAvg=False):
+    return temporal_moments_3D(data, settings, axis=axis, noAvg=noAvg)[..., 0]
 
 
-def temporal_mean_3D_non_uniform(data, settings):
-    return temporal_moments_3D_non_uniform(data, settings)[0]
+def temporal_mean_3D_non_uniform(data, settings, axis=(0,1), noAvg=False):
+    return temporal_moments_3D_non_uniform(data, settings, axis=axis, noAvg=noAvg)[..., 0]
 
 ####################################
 # Orderability
 ####################################
 
-
-# For each pair of channels, decide which one is earlier by comparing their time courses, converted to CDF
-# Result is bool [nCell, nCell] array
 def _bivariate_binary_orderability_from_moments(mu):
+    '''
+    For each pair of channels, decide which one is earlier by comparing their time courses, converted to CDF
+    :param mu: 1D Array of temporal means for every channel
+    :return: 2D array of shape [nCell, nCell],
+    '''
+
     biasRowExtrude = np.tile(mu, (len(mu), 1))
     rez = biasRowExtrude - biasRowExtrude.T
 
@@ -153,7 +157,14 @@ def _bivariate_binary_orderability_from_moments(mu):
 
 
 def _bivariate_student_orderability_from_moments(mu, var, nTrial, type="stat"):
-    # Can return either T-Test statistic or p-value
+    '''
+    :param mu:       1D Array of temporal means for every channel
+    :param var:      1D Array of temporal variances for every channel
+    :param nTrial:   number of trials used to compute temporal moments. Necessary for T-test
+    :param type:     Depending on output type, returns either T-Test statistic or p-value
+    :return:         Scalar orderability index
+    '''
+
     rezidx = 0 if type == "stat" else 1
 
     nNode = len(mu)
@@ -168,13 +179,23 @@ def _bivariate_student_orderability_from_moments(mu, var, nTrial, type="stat"):
     return rez
 
 
-# Compute BO given temporal mean array (trials x channels)
-# Compute mean for each channel, then apply linear transformation and take absolute value
-def _bivariate_orderability_from_temporal_mean(temporalMeans2D):
+def _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings):
+    '''
+    :param temporalMeans2D:    temporal mean array of shape [nTrial x nChannel]
+    :return:                   bivariate orderability of shape [nChannel, nChannel]
+
+    Compute mean for each channel, then apply linear transformation and take absolute value
+    '''
+
+    directed = "directed" in settings.keys() and settings["directed"]
+
     # Frequency with which first cell later than second
     phat2D = np.nanmean([_bivariate_binary_orderability_from_moments(mu) for mu in temporalMeans2D], axis=0)
 
-    ord = np.abs(2 * phat2D - 1)
+    ord = 2 * phat2D - 1
+    if not directed:
+        ord = np.abs(ord)
+
     ord[np.eye(len(ord), dtype=bool)] = np.nan
     return ord
 
@@ -182,8 +203,8 @@ def _bivariate_orderability_from_temporal_mean(temporalMeans2D):
 def bivariate_binary_orderability_3D(data, settings):
     def _aux(data, settings):
         # baselines = _get_baselines(dataOrd, settings)
-        temporalMeans2D = temporal_mean_3D(data, settings)
-        return _bivariate_orderability_from_temporal_mean(temporalMeans2D)
+        temporalMeans2D = temporal_mean_3D(data, settings, noAvg=True)
+        return _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
 
     return _test_data_consistent_run(data, settings, _aux, 0.5)
 
@@ -191,8 +212,8 @@ def bivariate_binary_orderability_3D(data, settings):
 def bivariate_binary_orderability_3D_non_uniform(data2DLst, settings):
     def _aux(data2DLst, settings):
         # baselines = _get_baselines_non_uniform(data2DLst, settings)
-        temporalMeans2D = temporal_mean_3D_non_uniform(data2DLst, settings)
-        return _bivariate_orderability_from_temporal_mean(temporalMeans2D)
+        temporalMeans2D = temporal_mean_3D_non_uniform(data2DLst, settings, noAvg=True)
+        return _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
 
     return _test_data_consistent_run_non_uniform(data2DLst, settings, _aux, 0.5)
 
@@ -216,25 +237,6 @@ def bivariate_student_orderability_3D_non_uniform(data2DLst, settings):
     return _test_data_consistent_run_non_uniform(data2DLst, settings, _aux, 0.5)
 
 
-# def _test_avg_bivar_bin_ord(ordByTrial, settings, nSample=2000):
-#     metricFunc = lambda ord: np.nanmean(offdiag_1D(_bivariate_orderability_from_binary(ord)))
-#
-#     aboTrue = metricFunc(ordByTrial)
-#     if "havePValue" not in settings or not settings["settings"]:
-#         return aboTrue
-#     else:
-#         # Calculate p-value by means of permutation
-#         ordByTrialFlat = ordByTrial.flatten()
-#         aboTestLst = []
-#         for iSample in range(nSample):
-#             perm = np.random.permutation(len(ordByTrialFlat))
-#             dataTest = ordByTrialFlat[perm].reshape(ordByTrial.shape)
-#             aboTestLst += [metricFunc(dataTest)]
-#
-#         pval = np.max([np.mean(np.array(aboTestLst) > aboTrue), 1 / nSample])
-#         return np.array([aboTrue, pval])
-
-
 def avg_bivariate_binary_orderability_3D(data, settings):
     return np.nanmean(offdiag_1D(bivariate_binary_orderability_3D(data, settings)))
 
@@ -242,8 +244,9 @@ def avg_bivariate_binary_orderability_3D(data, settings):
 def avg_bivariate_binary_orderability_3D_non_uniform(data2DLst, settings):
     return np.nanmean(offdiag_1D(bivariate_binary_orderability_3D_non_uniform(data2DLst, settings)))
 
+
 def avg_bivariate_binary_orderability_from_temporal_mean(temporalMeans2D):
-    return np.nanmean(offdiag_1D(_bivariate_orderability_from_temporal_mean(temporalMeans2D)))
+    return np.nanmean(offdiag_1D(_bivariate_orderability_from_temporal_mean(temporalMeans2D, {})))
 
 
 def avg_bivariate_student_orderability_3D(data, settings):

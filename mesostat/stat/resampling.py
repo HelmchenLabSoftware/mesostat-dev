@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # Resamples data along given axis using bootstrap method
 def bootstrap(x, axis=0):
     nElemAxis = x.shape[axis]
@@ -33,6 +32,20 @@ def get_sample_function(name):
         return cycling
     else:
         raise ValueError("Unexpected resampling function", name)
+
+
+def sample(x, methodName, permAxis=0, iterAxis=None):
+    sampleFunc = get_sample_function(methodName)
+    if iterAxis is None:
+        return sampleFunc(x, axis=permAxis)
+    else:
+        # Apply sampling for every element of selected axis
+        nElemAxis = x.shape[iterAxis]
+        permAxisEff = permAxis if permAxis < iterAxis else permAxis-1   # Account for iterated array being smaller
+        rezArr = np.array([sampleFunc(np.take(x, i, axis=iterAxis), axis=permAxisEff) for i in range(nElemAxis)])
+
+        # Transpose to move the sampled axis back to where it was originally
+        return np.rollaxis(rezArr, 0, iterAxis+1)
 
 
 def resample_monad(f, x, sampleFunc, nSample=2000):

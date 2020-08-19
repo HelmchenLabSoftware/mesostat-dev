@@ -20,23 +20,30 @@ def percentile_twosided(fTrue, fTestArr):
     return pvalL, pvalR
 
 
+def perm_test(f, x, nSample, permAxis=0, iterAxis=None, sampleFunction="permutation"):
+    fTrue = f(x)
+    fSampleAxis = lambda x: resampling.sample(x, sampleFunction, permAxis=permAxis, iterAxis=iterAxis)
+    fTestArr = resampling.resample_monad(f, x, fSampleAxis, nSample=nSample)
+    return percentile_twosided(fTrue, fTestArr)
+
+
 # Test if relative order of X vs Y matters.
 # Tests if values of f(x,y) are significantly different if y is permuted wrt x
-def paired_test(f, x, y, nSample, sampleFunction="permutation"):
+def paired_test(f, x, y, nSample, permAxis=0, iterAxis=None, sampleFunction="permutation"):
     assert x.shape == y.shape
     fTrue = f(x, y)
-    fSample = resampling.get_sample_function(sampleFunction)
-    fTestArr = resampling.resample_dyad_individual(f, x, y, fSample, nSample=nSample)
+    fSampleAxis = lambda x: resampling.sample(x, sampleFunction, permAxis=permAxis, iterAxis=iterAxis)
+    fTestArr = resampling.resample_dyad_individual(f, x, y, fSampleAxis, nSample=nSample)
     return percentile_twosided(fTrue, fTestArr)
 
 
 # Tests whether a certain function is significantly different for X as opposed to Y values
 # The values of X and Y are resampled from the shared pool
-def difference_test(f, x, y, nSample, sampleFunction="resample"):
+def difference_test(f, x, y, nSample, permAxis=0, iterAxis=None, sampleFunction="resample"):
     assert len(x) > 1, "Must have more than 1 sample to permute"
     assert len(y) > 1, "Must have more than 1 sample to permute"
 
-    fSample = resampling.get_sample_function(sampleFunction)
+    fSampleAxis = lambda x: resampling.sample(x, sampleFunction, permAxis=permAxis, iterAxis=iterAxis)
     fTrue = f(x, y)
-    fTestArr = resampling.resample_dyad_union(f, x, y, fSample, nSample=nSample)
+    fTestArr = resampling.resample_dyad_union(f, x, y, fSampleAxis, nSample=nSample)
     return percentile_twosided(fTrue, fTestArr)

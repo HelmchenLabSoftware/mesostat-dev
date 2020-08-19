@@ -2,8 +2,20 @@ import numpy as np
 from matplotlib import colors, colorbar
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import colorsys
 
 import mesostat.utils.pandas_helper as pandas_helper
+
+
+def random_colors(num_colors):
+    colors=[]
+    for i in np.arange(0., 360., 360. / num_colors):
+        hue = i/360.
+        lightness = (50 + np.random.rand() * 10)/100.
+        saturation = (90 + np.random.rand() * 10)/100.
+        colors.append(colorsys.hls_to_rgb(hue, lightness, saturation))
+    return colors
+
 
 def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, extent=None,
            xTicks=None, yTicks=None, haveTicks=False, cmap=None):
@@ -29,6 +41,7 @@ def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=Fal
         ax.set_yticks(np.arange(len(yTicks)))
         ax.set_yticklabels(yTicks)
     return img
+
 
 def plot_matrix(data, shape, xlabels=None, ylabels=None, plottitles=None, lims=None, title=None, haveColorBar=False,
                 xTicks=None, yTicks=None, haveTicks=False, savename=None):
