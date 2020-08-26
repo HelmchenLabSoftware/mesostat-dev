@@ -152,21 +152,21 @@ def numpy_nonelist_to_array(lst):
 
 
 
-# # Assign each string to one key out of provided
-# # If no keys found, assign special key
-# # If more than 1 key found, raise error
-# def bin_data_by_keys(strLst, keys):
-#     keysArr = np.array(keys, dtype=object)
-#     rez = []
-#     for s in strLst:
-#         matchKeys = np.array([k in s for k in keys], dtype=bool)
-#         nMatch = np.sum(matchKeys)
-#         if nMatch == 0:
-#             rez += ['other']
-#         elif nMatch == 1:
-#             rez += [keysArr[matchKeys][0]]
-#         else:
-#             raise ValueError("String", s, "matched multiple keys", keysArr[matchKeys])
-#
-#     assert len(rez) == len(strLst), "Resulting array length does not match original"
-#     return rez
+# Assign each string to one key out of provided
+# If no keys found, assign special key
+# If more than 1 key found, raise error
+def bin_data_by_keys(strLst, keys):
+    keysArr = np.array(keys, dtype=object)
+    rez = []
+    for s in strLst:
+        matchKeys = np.array([k in s for k in keys], dtype=bool)
+        nMatch = np.sum(matchKeys)
+        if nMatch == 0:
+            rez += ['other']
+        elif nMatch == 1:
+            rez += [keysArr[matchKeys][0]]
+        else:
+            raise ValueError("String", s, "matched multiple keys", keysArr[matchKeys])
+
+    assert len(rez) == len(strLst), "Resulting array length does not match original"
+    return rez

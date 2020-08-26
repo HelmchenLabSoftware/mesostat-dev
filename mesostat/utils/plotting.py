@@ -19,7 +19,7 @@ def random_colors(num_colors):
 
 def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, extent=None,
            xTicks=None, yTicks=None, haveTicks=False, cmap=None):
-    img = ax.imshow(data, cmap=cmap, extent=extent)
+    img = ax.imshow(data, cmap=cmap, extent=extent, aspect="auto")
     if xlabel is not None:
         ax.set_xlabel(xlabel)
     if ylabel is not None:

@@ -18,14 +18,18 @@ def get_rows_colval(df, colname, val):
 
 
 # Get rows for which several columns have some exact values
-def get_rows_colvals(df, queryDict):
+def get_rows_colvals(df, queryDict, dropQuery=False):
     if len(queryDict) == 0:
         return df
     else:
         # Query likes strings to be wrapped in quotation marks for later evaluation
         strwrap = lambda val: '"' + val + '"' if isinstance(val, str) else str(val)
         query = ' and '.join([colname+'=='+strwrap(val) for colname, val in queryDict.items()])
-        return df.query(query)
+        rez = df.query(query)
+        if dropQuery:
+            return rez.drop(columns=list(queryDict.keys()))
+        else:
+            return rez
 
 
 # Return all rows for which values match the list exactly
