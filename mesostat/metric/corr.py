@@ -26,7 +26,10 @@ def corr_significance(c, nData):
 # Correlation. Requires leading dimension to be channels
 # If y2D not specified, correlation computed between channels of x
 # If y2D is specified, correlation computed for x-x and x-y in a composite matrix
-def corr_2D(x2D, y2D=None, est='corr'):
+def corr_2D(x2D, y2D=None, settings=None):
+    est = settings['estimator'] if settings is not None and 'estimator' in settings.keys() else 'corr'
+    havePVal = settings['havePVal'] if (settings is not None) and ('havePVal' in settings.keys()) and settings['havePVal'] else False
+
     nChannel, nData = x2D.shape
 
     if nChannel <= 1:
@@ -36,17 +39,26 @@ def corr_2D(x2D, y2D=None, est='corr'):
         raise ValueError("Correlation requires at least 2 samples, got", nData)
 
     if est == 'corr':
-        return np.corrcoef(x2D, y2D)
+        rez = np.corrcoef(x2D, y2D)
+        if havePVal:
+            pval = corr_significance(rez, nData)
+            return np.array([rez, pval]).transpose((1, 2, 0))
+        else:
+            return rez
+
     elif est == 'spr':
-        spr, p = scipy.stats.spearmanr(x2D, y2D, axis=1)
+        rez, pval = scipy.stats.spearmanr(x2D, y2D, axis=1)
 
         # SPR has this "great" idea of only returning 1 number if exactly 2 channels are used
         if (nChannel == 2) and (y2D is None):
             coeff2mat = lambda d, c: np.array([[d, c],[c, d]])
-            #return [coeff2mat(1, spr), coeff2mat(0, p)]
-            return coeff2mat(1, spr)
+            rez = coeff2mat(1, rez)
+            pval = coeff2mat(np.nan, pval)
+
+        if havePVal:
+            return np.array([rez, pval]).transpose((1, 2, 0))
         else:
-            return spr
+            return rez
     else:
         raise ValueError('unexpected estimator type', est)
 
@@ -57,8 +69,7 @@ def corr_3D(data, settings):
     dataCanon = numpy_transpose_byorder(data, 'rps', 'psr')
     dataFlat = numpy_merge_dimensions(dataCanon, 1, 3)
 
-    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
-    return corr_2D(dataFlat, est=est)
+    return corr_2D(dataFlat, settings=settings)
 
 
 # Compute average absolute value off-diagonal correlation (synchr. coeff)
@@ -68,8 +79,7 @@ def avg_corr_3D(data, settings):
 
 
 def corr_3D_non_uniform(dataLst, settings):
-    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
-    return corr_2D(np.hstack(dataLst), est=est)
+    return corr_2D(np.hstack(dataLst), settings=settings)
 
 
 def avg_corr_3D_non_uniform(dataLst, settings):
@@ -106,8 +116,7 @@ def cross_corr_3D(data, settings):
     yy = numpy_merge_dimensions(dataOrd[:, lag:], 1, 3)
 
     # Only interested in x-y correlations, crop x-x and y-y
-    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
-    return corr_2D(xx, yy, est=est)[:nNode, nNode:]
+    return corr_2D(xx, yy, settings=settings)[:nNode, nNode:]
 
 
 def cross_corr_non_uniform_3D(dataLst, settings):
@@ -135,8 +144,7 @@ def cross_corr_non_uniform_3D(dataLst, settings):
     yy = np.hstack([data[:, :-lag] for data in dataLst])
 
     # Only interested in x-y correlations, crop x-x and y-y
-    est = settings['estimator'] if 'estimator' in settings.keys() else 'corr'
-    return corr_2D(xx, yy, est=est)[nNode:, :nNode]
+    return corr_2D(xx, yy, settings=settings)[nNode:, :nNode]
 
 
 # Correlation that works if some values in the dataset are NANs
