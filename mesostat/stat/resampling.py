@@ -34,7 +34,15 @@ def get_sample_function(name):
         raise ValueError("Unexpected resampling function", name)
 
 
-def sample(x, methodName, permAxis=0, iterAxis=None):
+def sample(x, methodName='permutation', permAxis=0, iterAxis=None):
+    '''
+    :param x: Dataset of arbitrary dimension
+    :param methodName: Method used for resampling
+    :param permAxis: Axis along which resampling will be performed
+    :param iterAxis: Axis to iterate over. Resampling will be performed on each element of this axis independently.
+    :return: a resampled array of the same shape as the original
+    '''
+
     sampleFunc = get_sample_function(methodName)
     if iterAxis is None:
         return sampleFunc(x, axis=permAxis)

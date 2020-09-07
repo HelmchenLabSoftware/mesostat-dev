@@ -179,7 +179,7 @@ def _bivariate_student_orderability_from_moments(mu, var, nTrial, type="stat"):
     return rez
 
 
-def _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings):
+def bivariate_orderability_from_temporal_mean(temporalMeans2D, settings):
     '''
     :param temporalMeans2D:    temporal mean array of shape [nTrial x nChannel]
     :return:                   bivariate orderability of shape [nChannel, nChannel]
@@ -204,7 +204,7 @@ def bivariate_binary_orderability_3D(data, settings):
     def _aux(data, settings):
         # baselines = _get_baselines(dataOrd, settings)
         temporalMeans2D = temporal_mean_3D(data, settings, noAvg=True)
-        return _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
+        return bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
 
     return _test_data_consistent_run(data, settings, _aux, 0.5)
 
@@ -213,7 +213,7 @@ def bivariate_binary_orderability_3D_non_uniform(data2DLst, settings):
     def _aux(data2DLst, settings):
         # baselines = _get_baselines_non_uniform(data2DLst, settings)
         temporalMeans2D = temporal_mean_3D_non_uniform(data2DLst, settings, noAvg=True)
-        return _bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
+        return bivariate_orderability_from_temporal_mean(temporalMeans2D, settings)
 
     return _test_data_consistent_run_non_uniform(data2DLst, settings, _aux, 0.5)
 
@@ -246,7 +246,7 @@ def avg_bivariate_binary_orderability_3D_non_uniform(data2DLst, settings):
 
 
 def avg_bivariate_binary_orderability_from_temporal_mean(temporalMeans2D):
-    return np.nanmean(offdiag_1D(_bivariate_orderability_from_temporal_mean(temporalMeans2D, {})))
+    return np.nanmean(offdiag_1D(bivariate_orderability_from_temporal_mean(temporalMeans2D, {})))
 
 
 def avg_bivariate_student_orderability_3D(data, settings):

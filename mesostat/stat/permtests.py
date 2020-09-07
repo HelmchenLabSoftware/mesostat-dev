@@ -33,6 +33,7 @@ def perm_test(f, x, nSample, permAxis=0, iterAxis=None, sampleFunction="permutat
     fTrue = f(x)
     fSampleAxis = lambda x: resampling.sample(x, sampleFunction, permAxis=permAxis, iterAxis=iterAxis)
     fTestArr = resampling.resample_monad(f, x, fSampleAxis, nSample=nSample)
+
     return percentile_twosided(fTrue, fTestArr, settings=settings)
 
 
