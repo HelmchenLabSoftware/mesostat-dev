@@ -126,10 +126,10 @@ def pval_to_stars(pVal, nStarsMax=4):
 
 # Place significance stars between two patches, such as barplot bars
 def stat_annot_patches(ax, p1, p2, pVal, **kwargs):
-    x1 = (p1._x0 + p1._x1) / 2
-    x2 = (p2._x0 + p2._x1) / 2
-    y1 = p1._y1
-    y2 = p2._y1
+    x1 = p1.get_x() + p1.get_width() / 2
+    x2 = p2.get_x() + p2.get_width() / 2
+    y1 = p1.get_y() + p1.get_height()
+    y2 = p2.get_y() + p2.get_height()
     stat_annot_coords(ax, x1, x2, y1, y2, pVal, **kwargs)
 
 
