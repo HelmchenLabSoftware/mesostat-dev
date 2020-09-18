@@ -65,3 +65,20 @@ def outer_product_df(d):
     return pd.DataFrame(rowsLst, columns = list(d.keys()))
 
 
+def merge_df_from_dict(dfDict, columnNames):
+    '''
+    :param dfDict: keys are extra column values as tuple. Values are dataframes. All dataframes must have same columns
+    :param columnNames: names of the extra columns
+    :return: a single dataframe that merges other dataframes using extra columns
+    '''
+
+    rezDFList = []
+    for k, v in dfDict.items():
+        dfCopy = v.copy()
+        # Iterate in reverse order because we will be inserting each column at the beginning
+        for colname, colval in zip(columnNames[::-1], k[::-1]):
+            dfCopy.insert(0, colname, colval)
+
+        rezDFList += [dfCopy]
+
+    return pd.concat(rezDFList, sort=False).reset_index(drop=True)
