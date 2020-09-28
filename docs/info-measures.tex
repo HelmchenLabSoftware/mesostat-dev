@@ -1,0 +1,50 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+%\usepackage[0.5pt]{margins}
+
+%opening
+\title{Temporal Relation Estimation}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\section{Intro}
+
+Problems to consider
+\begin{itemize}
+ \item Variance in exact spike timing
+ \item Probabilistic smooth spike representation (as in Cascade)
+ \item Accounting for firing rates of source and target. Accounting for sparse firing rate.
+\end{itemize}
+
+\section{Binary Spikes}
+
+Assume 2 neurons with binary (0,1) spike trains. The task is to estimate the presence of spike sequences. \\
+
+\begin{tabular}{|l | l | l|}
+	\hline
+   method & rates & sparsity \\ \hline
+   cross-correlation & Invariant & Spurious Increase \\
+   mutual-info & Invariant & Spurious Decrease (non-monotonic) \\
+\end{tabular}
+
+
+\subsection{Cross-correlation}
+
+\begin{itemize}
+\item Normalize source and target, subtract means
+\item Compute dot product
+\item Sparsity - most values will be mildly negative
+
+\end{itemize}
+
+
+
+
+
+
+
+
+\end{document}
