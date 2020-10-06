@@ -29,7 +29,8 @@ def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=Fal
     if haveColorBar:
         imshowAddColorBar(fig, ax, img)
     if not haveTicks:
-        ax.set_axis_off()
+        ax.axes.xaxis.set_ticks([])
+        ax.axes.yaxis.set_ticks([])
     if limits is not None:
         norm = colors.Normalize(vmin=limits[0], vmax=limits[1])
         img.set_norm(norm)
