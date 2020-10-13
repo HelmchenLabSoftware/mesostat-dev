@@ -1,0 +1,231 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.5in]{geometry}
+\setlength\parindent{0pt}
+\usepackage{cleveref}
+
+%opening
+\title{Mesostat - A tiny library for analysing mesoscopic neuronal data}
+\author{Aleksejs Fomins}
+
+\begin{document}
+
+\maketitle
+
+\section{Theory}
+
+\subsection{Signal-to-noise ratio estimation}
+
+\newpage
+\subsection{Temporal coarse graining}
+
+\subsubsection{Resampling}
+
+\subsubsection{Legendre basis projection}
+
+\subsubsection{Temporal mean}
+
+One way to summarize coarse temporal profile of a signal is approximating where 
+the bulk of the signal is located. In case of a temporally rich behaviour 
+considering bulk timing is meaningless - in general, something important may be 
+happening simulaneously in the beginning, middle and end of the trial time. 
+However, in some cases the majority of activity is consistently localized with 
+respect to the trial time, and this localization can be quantified. One metric 
+typically used to quanify such localization is the \textbf{time of maximal 
+activty}
+
+\begin{equation}
+    t_{\max} = \mathrm{argmax}\{x\}
+\end{equation}
+
+The problem with this metric is that it is not robust to small perturbations of 
+the data. For example, if the data consists of several peaks of comparable 
+height, the measure may jump between them simply due to noise, adding extra 
+variance to the metric. Further, should the left-most peak of the group end up 
+consistently slightly higher than the others, the location of the group would 
+be consistently biased to the left. \\
+
+Instead, we propose to use the metric we call \textbf{temporal mean}. It can be 
+constructed by reinterpreting the signal as a probability distribution
+
+\begin{equation}
+    \label{eqn-temporal-mean-distribution}
+    p_i = \frac{x_i}{\sum_i x_i}
+\end{equation}
+
+and calculating the mean as the first moment of that distribution
+
+\begin{equation}
+    t_{\mu} = \sum_i t_i p_i
+\end{equation}
+
+The problem with $t_{\mu}$ is that it is only meaningful if the 
+original data is positive and noise-free. If this is not the case, the original 
+data can be pre-processed (e.g. via gaussian or low-pass filter) to minimize 
+the effects of white noise, followed by baseline subtraction
+
+$$x^{eff}_i = ReLU(x_i - x_0)$$
+
+where $ReLU(x) = x$ if $x > 0$ and $0$ otherwise. If noise is very low, it may 
+be possible to select $x_0 = \min\{x\}$. However, in real data, the noise level 
+typically is too large for this metric to be robust. Solutions that work in 
+practice are the mean $x_0 = \bar{x} = \frac{1}{N}\sum_i x_i$ or some other 
+quantile of the distribution of the signal. Luckily, in practice temporal mean 
+appears to be quite resilient to the exact choice of $x_0$.
+
+\subsubsection{Temporal variance}
+
+A very interesting question is whether the data is at all localized during
+trial time, and if yes, by how much. To some extent, this question can be 
+answered by considering if the temporal mean is sufficiently far away from the 
+middle of the trial. However, if the temporal mean is at the middle of the 
+trial, from it alone it is not possible to tell if the distribution of the data 
+is peaked in the middle, uniform across trial time, or peaked at its both ends 
+and zero in the middle. At first glance, the exact metric answering this 
+question would be the variance, that is, the second moment of 
+\cref{eqn-temporal-mean-distribution}.
+
+\begin{equation}
+    \sigma^2_{t} = \sum_i (t_i - t_{\mu})^2 p_i
+\end{equation}
+
+However, it suffers from a few major drawbacks:
+\begin{itemize}
+    \item Due to its quadratic nature, it is very sensitive to outliers. Thus, 
+potentially very small activity far away from the mean has dramatic influence on
+$\sigma^2$
+    \item If $t_{\mu}$ is not at the middle of the trial, then the trial time is 
+not centered around it, resulting in bias towards the larger side.
+\end{itemize}
+
+Unfortunately, currently this direction is stuck. There is no clear idea on how 
+to make the variance metric more robust, or if the problem is even well-defined 
+in general.
+
+
+
+\newpage
+\subsection{Temporal coarse order}
+
+\subsubsection{Directed Binary Temporal Orderability}
+
+Given two signals, it is of interest if one of them consistently is more active 
+before the other. The simplest way to test this is by means of \textbf{binary 
+orderability}
+
+\begin{equation}
+    T_{\infty}(p^i, p^j) = t_{\mu}^i > t_{\mu}^j
+\end{equation}
+
+In itself, the binary orderability is just a boolean variable, and cannot tell 
+if one channel is significantly earlier than the other. However, this 
+significance can be gained by averaging the metric over multiple trials.
+
+\begin{equation}
+    N^{>}_{ij} = \sum_k T(p^{ik}, p^{jk})
+\end{equation}
+
+Finally, we can normalize the metric and map it onto $[-1, 1]$ interval.
+
+\begin{equation}
+    DBO_{ij} = 2\frac{N^{>}_{ij}}{N_{trial}} - 1
+\end{equation}
+
+Thus, if DBO between two channels is $-1$, the first channel always comes 
+before the second, if $1$ then always after, and if $0$ they perfectly 
+alternate.
+
+\subsubsection{Directed Student Temporal Orderability}
+
+If there ever is a way to robustly estimate $\sigma^2_t$, then binary 
+orderability can be extended to take into consideration the significance of 
+temporal order. Namely, if both temporal sequences are approximated by normal 
+distributions, their order can be estimated by a t-test statistic of their 
+moments
+
+\begin{equation}
+    T_{\mathcal{N}}(p^i, p^j) = \frac{t_{\mu}^i - 
+t_{\mu}^j}{\sqrt{\frac{\sigma_i^2 + \sigma_j^2}{2}}}
+\end{equation}
+
+Similarly to the above, the temporal order can be averaged over trials. 
+However, in this case, the average of gaussians is also a gaussian, where the 
+mean and the variance follow a very specific formula
+
+$$ t_{avg} = \frac{1}{N}\sum_k t^k_{\mu} $$
+$$ \sigma^2_{avg} = \frac{1}{N}\sum_k (\sigma^2)^k $$
+
+Finally, a relationship can be drawn between t-test statistic an the p-value 
+associated with it. It should be possible to show that calculating a p-value on 
+trial-averaged moments is the same as calculating the p-value for each trial 
+individually, and then taking the geometric mean.
+
+\subsubsection{Average orderability}
+
+Further, the orderability matrix can be used to estimate if a set of channels 
+are orderable above chance. For this purpose, the average DBO can be calculated
+
+$$ABO = \frac{\sum_{i\neq j} |DBO_{ij}|}{N_{ch}(N_{ch} - 1)}$$
+
+Since the orderabilities of individual elements of $DBO$ correlate, it is 
+unlikely that an explicit expression for the distibution of ABO exists. Thus, 
+in order to test its significance the only remaining option is 
+permutation-testing. For this purpose, channel indices can be randomly 
+shuffled for each trial independently, resulting in data that has the same 
+dynamics as the original, but randomized orderability. The same can be done 
+with student orderability
+
+$$ASO = \frac{\sum_{i\neq j} |T^{\mathcal{N}, avg}_{ij}|}{N_{ch}(N_{ch} - 1)}$$
+
+\subsubsection{Significantly orderable channels}
+
+A frequent explanation for non-random orderability is the presence of several 
+temporally localized channels which are orderable with most channels. Thus, it 
+is of interest to identify if there are channels that are not orderable with 
+other channels except for the localized channels. 
+
+
+
+
+
+\newpage
+\subsection{Undirected Functional Connectivity - Discrete Spikes}
+
+A basic question in neuroscience is to estimate the level of co-activity of two neurons given exact spike times. The measure of co-activity has to be sufficiently robust to consistently find significant differences in co-activity among different neuron pairs and different experimental conditions, if such differences are present. However, spikes never coincide. Regardless of the pre-processing used (binning, KDE, etc), the definition of co-activity requires providing a free parameter - the timescale within which the spikes are assumed to be coincident. \\
+
+The challenges of robust estimation of spiking FC include
+
+\begin{itemize}
+ \item Robust algorithm for selecting smoothening timescale
+ \item Spikes may be very sparse. If empty bins are used for analysis, their quantity may bias the metric
+ \item Metrics may be biased on specific firing rates of each neuron. Such biases must be accounted for
+\end{itemize}
+
+Below is the summary of metrics and their performance with respect to the above criteria \\
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l | l | l|}
+	\hline
+   method & rates & sparsity \\ \hline
+   cross-correlation & Invariant & Spurious Increase \\
+   mutual-info & Invariant & Spurious Decrease (non-monotonic) \\
+\end{tabular}
+
+\end{table}
+
+
+\newpage
+\subsection{Undirected Functional Connectivity - Spike probabilities}
+
+A harder problem is estimating co-activity if input data contains instantainous firing rates instead of sharp spikes. Naive application of co-activity metrics to such data may result in single spike affecting multiple time-bins, increasing the variance of metrics.
+
+\newpage
+\subsection{Undirected Functional Connectivity - Mesoscopic}
+
+\newpage
+\subsection{Directed Functional Connectivity - Mesoscopic}
+
+
+
+\end{document}
