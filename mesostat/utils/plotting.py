@@ -1,8 +1,10 @@
 import numpy as np
 from matplotlib import colors, colorbar
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import colorsys
+from scipy import interpolate
 
 import mesostat.utils.pandas_helper as pandas_helper
 
@@ -18,8 +20,8 @@ def random_colors(num_colors):
 
 
 def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, extent=None,
-           xTicks=None, yTicks=None, haveTicks=False, cmap=None):
-    img = ax.imshow(data, cmap=cmap, extent=extent, aspect="auto")
+           xTicks=None, yTicks=None, haveTicks=False, cmap=None, aspect='auto'):
+    img = ax.imshow(data, cmap=cmap, extent=extent, aspect=aspect)
     if xlabel is not None:
         ax.set_xlabel(xlabel)
     if ylabel is not None:
@@ -92,6 +94,29 @@ def imshowAddFakeColorBar(fig, ax, cmap, vmin=0, vmax=1):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
     cb1 = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='vertical')
+
+
+def custom_grad_cmap(colorArr):
+    '''
+    Generate a custom colormap given colors
+
+    :param colorArr: array of shape [nPoint, 3] - an RGB color for each interpolation point
+    :return: a matplotlib CMAP. Currently distributes the interpolation points evenly
+    '''
+
+    nStep = 256
+    nPoint = len(colorArr)
+
+    colorArrEff = colorArr if np.max(colorArr) <= 1 else colorArr / 255
+
+    x = np.arange(nStep)
+    x0 = np.linspace(0, nStep - 1, nPoint)
+
+    vals = np.ones((nStep, 4))
+    vals[:, 0] = interpolate.interp1d(x0, colorArrEff[:, 0], kind='linear')(x)
+    vals[:, 1] = interpolate.interp1d(x0, colorArrEff[:, 1], kind='linear')(x)
+    vals[:, 2] = interpolate.interp1d(x0, colorArrEff[:, 2], kind='linear')(x)
+    return ListedColormap(vals)
 
 
 # Plot stacked barplot from pandas dataframe

@@ -37,11 +37,6 @@ def approx_decay_conv(data, tau, dt):
     return rez[1:]  # Remove first element, because it is zero and meaningless. Get same shape as original data
 
 
-# # Imitate geometric sampling, by selecting some neurons 100% and the rest exponentially dropping
-# def samplingRangeScale(x, delta, tau):
-#     return np.multiply(x < delta, 1.0) + np.multiply(x >= delta, np.exp(-(x-delta)/tau))
-
-
 # Downsample uniformly-spaced points by grouping them together and taking averages
 # * Advantage is that there is no overlap between points
 # * Disadvantage is that the options are limited to just a few values of nt
