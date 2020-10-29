@@ -10,7 +10,8 @@ from mesostat.utils.pandas_helper import get_rows_colvals
 
 '''
 NOTE:
-    Attribute names "name", "dset", "datetime" are reserved and should not be used
+    * Attribute names "name", "dset", are reserved and should not be used
+    * Attribute "datetime" may be overwritten by user
 
 Features
 [+] Store time for each dataset
@@ -47,11 +48,18 @@ class DataStorage:
         return fileMode, dsetName
 
     def _write_attrs(self, dset, name, attrDict):
-        for k, v in attrDict.items():
-            dset.attrs[k] = v
+        attrDictThis = attrDict.copy()
+        attrDictThis['name'] = name
 
-        dset.attrs['name'] = name
-        dset.attrs['datetime'] = datetime.now().strftime(self.dateTimeFormat)
+        # Set Datetime as now if not provided by user
+        if datetime not in attrDictThis.keys():
+            attrDictThis['datetime'] = datetime.now().strftime(self.dateTimeFormat)
+        else:
+            attrDictThis['datetime'] = attrDictThis['datetime'].strftime(self.dateTimeFormat)
+
+        # Write attributes to file
+        for k, v in attrDictThis.items():
+            dset.attrs[k] = v
 
     def get_data(self, dsetName):
         with h5py.File(self.fname, "r") as f5file:

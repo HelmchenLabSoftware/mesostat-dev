@@ -71,6 +71,7 @@ def discrete_cdf_sample(cdf, nSample):
     bisectIdxs = [bisect_left(cdfP, p) for p in urand]
     return cdfX[bisectIdxs]
 
+
 # Convert 1D dataset to pmf
 def convert_pmf(x, base):
     assert x.ndim == 1, "Only defined for 1D data"
