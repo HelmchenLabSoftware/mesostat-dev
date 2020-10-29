@@ -5,6 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 from shutil import copyfile
+from ast import literal_eval as str2tuple
 
 from mesostat.utils.pandas_helper import get_rows_colvals
 
@@ -65,6 +66,19 @@ class DataStorage:
         with h5py.File(self.fname, "r") as f5file:
             return np.array(f5file[dsetName])
 
+    def get_data_recent_by_query(self, queryDict, listDF=None):
+        if listDF is None:
+            listDF = self.list_dsets_pd()
+
+        rows = get_rows_colvals(listDF, queryDict)
+
+        # Find index of the latest result
+        maxRowIdx = rows['datetime'].idxmax()
+        attrs = rows.loc[maxRowIdx]
+        data = self.get_data(attrs['dset'])
+
+        return data, attrs
+
     def del_data(self, dsetName):
         self._backup()
         with h5py.File(self.fname, "a") as f5file:
@@ -123,5 +137,10 @@ class DataStorage:
         # Convert DateTime back to object
         datetimes = [datetime.strptime(d, self.dateTimeFormat) for d in list(dfRez["datetime"])]
         dfRez = dfRez.assign(datetime=datetimes)
+
+        # Convert shape back to tuple
+        if 'target_dim' in dfRez.keys():
+            shapeLabels = [str2tuple(d) for d in list(dfRez["target_dim"])]
+            dfRez = dfRez.assign(target_dim=shapeLabels)
 
         return dfRez
