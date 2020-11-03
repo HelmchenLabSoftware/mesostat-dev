@@ -48,9 +48,8 @@ def approx_decay_conv(data, tau, dt):
 def downsample_int(x1, y1, nt):
     nTimes1 = len(x1)
     nTimes2 = nTimes1 // nt
-    shape2 = y1.shape
-    assert shape2[0] == nTimes1, "Times array and selected axis of data array must match"
-    shape2[0] = nTimes2
+    assert y1.shape[0] == nTimes1, "Times array and selected axis of data array must match"
+    shape2 = (nTimes2,) + y1.shape[1:]
 
     x2 = np.zeros(nTimes2)
     y2 = np.zeros(shape2)
