@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 from mesostat.stat.stat import discrete_CDF
+from mesostat.metric.impl.infotheory import entropy_discrete_1D
 
 
 # data2D of shape 'ps'
@@ -21,3 +22,24 @@ def rank_smooth2D(data2D, settings):
 # data3D of shape 'rps'
 def rank_smooth3D(data3D, settings):
     return rank_smooth2D(np.hstack(data3D), settings)
+
+
+def erank2D(data2D):
+    '''
+    :param data2D: input data of shape (channels, samples)
+    :return: scalar - effective rank
+    '''
+
+    if len(data2D) <= 1:
+        return 1
+    else:
+        corr = np.corrcoef(data2D)
+        eig = np.linalg.eigvals(corr)
+        eigNorm = eig / np.sum(eig)
+
+        return np.exp(entropy_discrete_1D(eigNorm))
+
+
+# data3D of shape 'rps'
+def erank3D(data, settings):
+    return erank2D(np.hstack(data))

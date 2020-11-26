@@ -1,8 +1,8 @@
 import pandas as pd
-from mesostat.utils.algorithms import non_uniform_base_arithmetic_iterator
+import itertools
 
 
-def get_one_row(rows):
+def pd_is_one_row(rows):
     nRows = rows.shape[0]
     if nRows == 0:
         return None, None
@@ -13,12 +13,15 @@ def get_one_row(rows):
         return idx, row
 
 
-def get_rows_colval(df, colname, val):
+def pd_rows_colval(df, colname, val):
     return df[df[colname] == val]
 
 
 # Get rows for which several columns have some exact values
-def get_rows_colvals(df, queryDict, dropQuery=False):
+# FIXME: Does not work with complex datatypes like tuple
+# TODO: Implement partial matches
+# TODO: Implement inequalities
+def pd_query(df, queryDict, dropQuery=False):
     if len(queryDict) == 0:
         return df
     else:
@@ -33,35 +36,51 @@ def get_rows_colvals(df, queryDict, dropQuery=False):
 
 
 # Return all rows for which values match the list exactly
-def get_rows_colvals_exact(df, lst):
-    return get_rows_colvals(df, dict(zip(df.columns, lst)))
+def pd_query_exact(df, lst):
+    return pd_query(df, dict(zip(df.columns, lst)))
 
 
 # Check if there is at least 1 row that matches the list exactly
-def row_exists(df, lst):
-    return len(get_rows_colvals_exact(df, lst)) > 0
+def pd_row_exists(df, lst):
+    return len(pd_query_exact(df, lst)) > 0
 
 
 # Add new row to dataframe, unless such a row is already present
-def add_list_as_row(df, lst, skip_repeat=True):
-    if skip_repeat and row_exists(df, lst):
+def pd_append_row(df, lst, skip_repeat=True):
+    if skip_repeat and pd_row_exists(df, lst):
         print("Skipping existing row", lst)
         return df
     else:
         newRow = pd.DataFrame([lst], columns=df.columns)
         return df.append(newRow, ignore_index=True)
 
+# Appends all dataframes in a list
+# A new column is added with values unique to the rows of original dataframes
+def pd_vstack_df(dfLst, colName, colVals):
+    rez = pd.DataFrame()
+    for df, val in zip(dfLst, colVals):
+        df1 = df.copy()
+        df1[colName] = val
+        rez = rez.append(df1)
+    return rez.reset_index()
+
+
+# Merge several dataframes with exactly the same structure by adding columns that have different values
+# TODO: Test that dataframes are indeed equivalent
+# TODO: Test that dataframe values are exactly the same except of split cols
+def pd_merge_equivalent_df(dfLst, splitColNames, dfNames):
+    dfRez = dfLst[0].copy()
+    dfRez = dfRez.drop(splitColNames)
+    for df, dfName in zip(dfLst, dfNames):
+        for colName in splitColNames:
+            dfRez[colName + '_' + dfName] = df[colName]
+    return dfRez
+
 
 # Get a dictionary where keys are column names and values are possible values for that column
 # Construct a dataframe where rows are all combinations of provided column values
 def outer_product_df(d):
-    rowsLst = []
-    baseArr = [len(v) for v in d.values()]
-    sweepIter = non_uniform_base_arithmetic_iterator(baseArr)
-
-    for valIdxs in sweepIter:
-        rowsLst += [[v[i] for v, i in zip(d.values(), valIdxs)]]
-
+    rowsLst = list(itertools.product(*d.values()))
     return pd.DataFrame(rowsLst, columns = list(d.keys()))
 
 

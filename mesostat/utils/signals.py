@@ -12,6 +12,14 @@ def zscore(x, axis=None):
     return (x - mu) / std
 
 
+def zscore_dim_ord(x, dimOrdSrc, dimOrdZ=None):
+    if dimOrdZ is not None:
+        axisZScore = tuple([i for i, e in enumerate(dimOrdSrc) if e in dimOrdZ])
+        return zscore(x, axisZScore)
+    else:
+        return x
+
+
 # ZScore list of arrays, computing mean and std from concatenated data
 def zscore_list(lst):
     xFlat = np.hstack([data.flatten for data in lst])

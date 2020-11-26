@@ -7,7 +7,7 @@ from datetime import datetime
 from shutil import copyfile
 from ast import literal_eval as str2tuple
 
-from mesostat.utils.pandas_helper import get_rows_colvals
+from mesostat.utils.pandas_helper import pd_query
 
 '''
 NOTE:
@@ -29,6 +29,7 @@ class DataStorage:
         self.fnamebackup = os.path.splitext(fname)[0] + '.bak'
         self.basename = 'dset'
         self.dateTimeFormat = "%d/%m/%Y %H:%M:%S"
+        self.pandasTimeFormat = "%Y-%m-%d %H:%M:%S"
 
     def _incr_name(self, nameLst, basename):
         nBase = len(basename)
@@ -70,7 +71,7 @@ class DataStorage:
         if listDF is None:
             listDF = self.list_dsets_pd()
 
-        rows = get_rows_colvals(listDF, queryDict)
+        rows = pd_query(listDF, queryDict)
 
         # Find index of the latest result
         maxRowIdx = rows['datetime'].idxmax()
@@ -105,15 +106,23 @@ class DataStorage:
         with h5py.File(self.fname, fileMode) as f5file:
             self._write_attrs(f5file[dsetName], name, attrDict)
 
-    def delete_by_query(self, queryDict):
+    def delete_rows(self, rows):
         self._backup()
-
-        summaryDF = self.list_dsets_pd()
-        rows = get_rows_colvals(summaryDF, queryDict)
-
+        print('Deleting', len(rows), 'rows')
         with h5py.File(self.fname, "a") as f5file:
             for idx, row in rows.iterrows():
                 del f5file[row['dset']]
+
+    def delete_by_query(self, queryDict):
+        summaryDF = self.list_dsets_pd()
+        rows = pd_query(summaryDF, queryDict)
+        self.delete_rows(rows)
+
+    def delete_recent(self, timestr):
+        timeObj = datetime.strptime(timestr, self.pandasTimeFormat)
+        summaryDF = self.list_dsets_pd()
+        rows = summaryDF[summaryDF['datetime'] >= timeObj]
+        self.delete_rows(rows)
 
     def list_dset_names(self):
         with h5py.File(self.fname, "r") as f5file:

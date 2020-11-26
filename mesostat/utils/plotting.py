@@ -131,7 +131,7 @@ def stacked_bar_plot(ax, df, xKey, yKey):
     bottom = np.zeros(len(set(df[xKey])))
     for idx, row in sweepDF.iterrows():
         queryDict = dict(row)
-        dfThis = pandas_helper.get_rows_colvals(df, queryDict)
+        dfThis = pandas_helper.pd_query(df, queryDict)
         ax.bar(dfThis[xKey], dfThis[yKey], bottom=bottom, label=str(list(queryDict.values())))
         bottom += np.array(dfThis[yKey])
 
