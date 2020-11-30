@@ -13,12 +13,12 @@ from mesostat.utils.pandas_helper import pd_query
 NOTE:
     * Attribute names "name", "dset", are reserved and should not be used
     * Attribute "datetime" may be overwritten by user
+    * Considered also storing pandas dataframes, but it is much easier to use pandas-hdf5 interface directly
 
 Features
 [+] Store time for each dataset
 [+] Allow non-unique names: generate fake dataset keys
 [+] Backup when saving
-[+] Store Pandas Dataframes
 [+] Delete datasets by query
 [+] Select/Delete datasets by datetime interval
 '''
@@ -94,18 +94,6 @@ class DataStorage:
         with h5py.File(self.fname, fileMode) as f5file:
             dset = f5file.create_dataset(dsetName, data=data)
             self._write_attrs(dset, name, attrDict)
-
-    def save_dataframe(self, name, df, attrDict):
-        fileMode, dsetName = self._get_mode_and_next_dsetname()
-
-        if fileMode == 'a':
-            self._backup()
-
-        df.to_hdf(self.fname, dsetName, mode=fileMode, format='table', data_columns=True)
-
-        if len(attrDict) > 0:
-            with h5py.File(self.fname, fileMode) as f5file:
-                self._write_attrs(f5file[dsetName], name, attrDict)
 
     def delete_rows(self, rows):
         self._backup()
