@@ -7,6 +7,7 @@ from mesostat.metric.autocorr import autocorr_3D, autocorr_d1_3D
 import mesostat.metric.npeet as npeet
 import mesostat.metric.autoregression as autoregression
 from mesostat.metric.stretch import stretch_basis_projection
+import mesostat.metric.moment as moment
 import mesostat.metric.sequence as sequence
 import mesostat.metric.pca as pca
 from mesostat.metric.idtxl_te import idtxl_single_target, idtxl_network
@@ -44,9 +45,10 @@ class MetricCalculator:
         # Initialize metric library
         self.metricDict = {
             # SCALAR METRICS
-            "sum":                  self._nansum,
-            "mean":                 self._nanmean,
-            "std":                  self._nanstd,
+            "sum":                  moment.nansum,
+            "mean":                 moment.nanmean,
+            "std":                  moment.nanstd,
+            "varmean":              moment.varmean,
             "autocorr_d1":          autocorr_d1_3D,
             "ar1_coeff":            autoregression.ar1_coeff,
             "ar1_testerr":          autoregression.ar1_testerr,
@@ -110,15 +112,6 @@ class MetricCalculator:
         # else:
         #     self.data = dataCanon
 
-    def _nansum(self, data, settings):
-        return np.nansum(data)
-
-    def _nanmean(self, data, settings):
-        return np.nanmean(data)
-
-    def _nanstd(self, data, settings):
-        return np.nanstd(data)
-
     def _TE(self, method, data, settings):
         if settings["parallelTrg"]:
             return idtxl_single_target(settings["iTrg"], method, data, settings)
@@ -174,28 +167,41 @@ class MetricCalculator:
         return data.transpose(tuple(dimSeq))
 
     def _preprocess(self, metricName, metricSettings, sweepSettings):
-        nProcess = self.data.shape[self.dimOrderCanon.index("p")]
+        if metricSettings is not None:
+            nProcess = self.data.shape[self.dimOrderCanon.index("p")]
 
-        # Wrapper for IDTxl - allow to parallelize over targets
-        if "parallelTrg" in metricSettings and metricSettings["parallelTrg"]:
-            if self._is_metric_idtxl_mi_te(metricName):
-                if sweepSettings is None:
-                    sweepSettings = {}
-                sweepSettings["iTrg"] = list(range(nProcess))
-            else:
-                raise ValueError("Attempting to parallelize over target for unexpected metric", metricName)
-        elif "parallelSrc3D" in metricSettings and metricSettings["parallelSrc3D"]:
-            if metricName == "BivariatePID":
-                trg = metricSettings['trg']
-                src = []
-                for i in range(nProcess):
-                    if i != trg:
-                        for j in range(i+1, nProcess):
-                            if j != trg:
-                                src += [(i, j)]
-                sweepSettings['src'] = src
-            else:
-                raise ValueError("Attempting to parallelize over sources for unexpected metric", metricName)
+            # Wrapper for IDTxl - allow to parallelize over targets
+            if "parallelTrg" in metricSettings:
+                if metricSettings["parallelTrg"]:
+                    if self._is_metric_idtxl_mi_te(metricName):
+                        if sweepSettings is None:
+                            sweepSettings = {}
+                        sweepSettings["iTrg"] = list(range(nProcess))
+                    else:
+                        raise ValueError("Attempting to parallelize over target for unexpected metric", metricName)
+            elif "parallelSrc3D" in metricSettings:
+                if metricSettings["parallelSrc3D"]:
+                    if metricName == "BivariatePID":
+                        if sweepSettings is None:
+                            sweepSettings = {}
+
+                        trg = metricSettings['trg']
+                        src = []
+
+                        if isinstance(metricSettings["parallelSrc3D"], bool):
+                            sources = np.arange(nProcess)
+                        else:
+                            sources = metricSettings["parallelSrc3D"]
+
+                        nSources = len(sources)
+                        for i in range(nSources):
+                            if sources[i] != trg:
+                                for j in range(i+1, nSources):
+                                    if sources[j] != trg:
+                                        src += [[sources[i], sources[j]]]
+                        sweepSettings['src'] = src
+                else:
+                    raise ValueError("Attempting to parallelize over sources for unexpected metric", metricName)
 
         return sweepSettings
 
@@ -213,16 +219,17 @@ class MetricCalculator:
         elif "parallelSrc3D" in metricSettings and metricSettings["parallelSrc3D"]:
             if metricName == "BivariatePID":
                 # 1. Find the dimOrder of the source sweep
-                idxSrcDim = self._sweep_param_idx(sweepSettings, 'iTrg')
+                idxSrcDim = self._sweep_param_idx(sweepSettings, 'src')
 
                 # Construct new shape where there is no source loop, but there is a 2D [nCh x nCh] array at the end
                 nProcess = self.data.shape[self.dimOrderCanon.index("p")]
                 newShape = result.shape[:idxSrcDim] + result.shape[idxSrcDim+1:] + (nProcess, nProcess)
-                resultNew = np.array(newShape)
+                resultNew = np.zeros(newShape)
 
                 # Fill it in
                 for iSrcPair, (iSrc1, iSrc2) in enumerate(sweepSettings['src']):
-                    resultNew[..., iSrc1, iSrc2] = np.take(result, iSrcPair, axis=idxSrcDim)
+                    tmp = np.take(result, iSrcPair, axis=idxSrcDim)
+                    resultNew[..., iSrc1, iSrc2] = tmp
 
                 # Push the PID components into last axis
                 return self._push_back_dim(resultNew, -3)

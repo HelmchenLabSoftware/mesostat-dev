@@ -116,6 +116,14 @@ def numpy_merge_dimensions(data, l, r):
     return data.reshape(shNew)
 
 
+# Move a dimension from one place to another
+def numpy_move_dimension(data, axisOld, axisNew):
+    orderOld = list(np.arange(data.ndim))
+    orderTakeOut = orderOld[:axisOld] + orderOld[axisOld+1:]
+    orderNew = orderTakeOut[:axisNew] + [axisOld] + orderTakeOut[axisNew+1:]
+    return data.transpose(orderNew)
+
+
 # Specify exact indices for some axis of the array
 # Returns array of smaller dimension
 def numpy_take_all(a, axes, indices):

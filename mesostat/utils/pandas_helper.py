@@ -47,9 +47,10 @@ def pd_row_exists(df, lst):
 
 # Add new row to dataframe, unless such a row is already present
 def pd_append_row(df, lst, skip_repeat=True):
-    if skip_repeat and pd_row_exists(df, lst):
-        print("Skipping existing row", lst)
-        return df
+    if skip_repeat:
+        if pd_row_exists(df, lst):
+            print("Skipping existing row", lst)
+            return df
     else:
         newRow = pd.DataFrame([lst], columns=df.columns)
         return df.append(newRow, ignore_index=True)

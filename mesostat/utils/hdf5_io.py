@@ -101,10 +101,11 @@ class DataStorage:
         if fileMode == 'a':
             self._backup()
 
-        df.to_hdf(self.basename, dsetName, mode=fileMode, format='table', data_columns=True)
+        df.to_hdf(self.fname, dsetName, mode=fileMode, format='table', data_columns=True)
 
-        with h5py.File(self.fname, fileMode) as f5file:
-            self._write_attrs(f5file[dsetName], name, attrDict)
+        if len(attrDict) > 0:
+            with h5py.File(self.fname, fileMode) as f5file:
+                self._write_attrs(f5file[dsetName], name, attrDict)
 
     def delete_rows(self, rows):
         self._backup()
