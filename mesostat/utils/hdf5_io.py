@@ -102,15 +102,17 @@ class DataStorage:
             for idx, row in rows.iterrows():
                 del f5file[row['dset']]
 
-    def delete_by_query(self, queryDict):
-        summaryDF = self.list_dsets_pd()
-        rows = pd_query(summaryDF, queryDict)
-        self.delete_rows(rows)
+    def delete_by_query(self, queryDict=None, timestr=None):
+        if queryDict is None and timestr is None:
+            raise ValueError('Must specify what to delete')
 
-    def delete_recent(self, timestr):
-        timeObj = datetime.strptime(timestr, self.pandasTimeFormat)
-        summaryDF = self.list_dsets_pd()
-        rows = summaryDF[summaryDF['datetime'] >= timeObj]
+        rows = self.list_dsets_pd()
+        if queryDict is not None:
+            rows = pd_query(rows, queryDict)
+        if timestr is not None:
+            timeObj = datetime.strptime(timestr, self.pandasTimeFormat)
+            rows = rows[rows['datetime'] >= timeObj]
+
         self.delete_rows(rows)
 
     def list_dset_names(self):
