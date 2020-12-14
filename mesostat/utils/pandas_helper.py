@@ -46,7 +46,7 @@ def pd_row_exists(df, lst):
 
 
 # Add new row to dataframe, unless such a row is already present
-def pd_append_row(df, lst, skip_repeat=True):
+def pd_append_row(df, lst, skip_repeat=False):
     if skip_repeat:
         if pd_row_exists(df, lst):
             print("Skipping existing row", lst)

@@ -3,19 +3,26 @@ import numpy as np
 from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes
 from mesostat.metric.impl.time_splitter import split3D
 from mesostat.stat.machinelearning import drop_nan_rows
+from mesostat.stat.resampling import permutation
 
 import npeet.entropy_estimators as ee
 
 
 def average_entropy_3D(data, settings):
-    dataCanon = numpy_transpose_byorder(data, 'rps', 'srp')
-    dataFlat = numpy_merge_dimensions(dataCanon, 0, 2)
+    dataFlat = np.hstack(data).T  # rps -> (rs)p
+
     nSample, nProcess = dataFlat.shape
     if nSample < 5 + 5 * nProcess:
         # If there are too few samples, there is no point to calculate anything
         return np.array(np.nan)
     else:
         return ee.entropy(dataFlat) / nProcess
+
+
+def average_tc_3D(data, settings):
+    dataFlat = np.hstack(data)  # rps -> p(rs)
+    dataShuffle = np.array([permutation(d) for d in dataFlat])
+    return ee.kldiv(dataFlat.T, dataShuffle.T) / len(dataFlat)
 
 
 def average_entropy_3D_non_uniform(dataLst, settings):

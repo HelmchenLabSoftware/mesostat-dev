@@ -59,6 +59,7 @@ class MetricCalculator:
             "mar_inp_testerr":      autoregression.mar_inp_testerr,
             "avgcorr":              avg_corr_3D,
             "avg_entropy":          npeet.average_entropy_3D,
+            "avg_TC":               npeet.average_tc_3D,
             "avg_PI":               npeet.average_predictive_info,
             "rank_smooth":          pca.rank_smooth3D,
             "rank_effective":       pca.erank3D,
@@ -86,13 +87,13 @@ class MetricCalculator:
             "generic_metric":       self._generic_metric
         }
 
-        # Initialize composite metrics library
-        self.compositeMetricDict = {
-            "avg_entropy_1D" :      self._avg_entropy_1D,
-            "avg_PI_1D":            self._avg_PI_1D,
-            "avg_TC":               self._avg_TC,
-            "avg_TPI":              self._avg_TPI,
-        }
+        # # Initialize composite metrics library
+        # self.compositeMetricDict = {
+        #     "avg_entropy_1D" :      self._avg_entropy_1D,
+        #     "avg_PI_1D":            self._avg_PI_1D,
+        #     "avg_TC":               self._avg_TC,
+        #     "avg_TPI":              self._avg_TPI,
+        # }
 
         # Initialize canonical order
         self.dimOrderCanon = 'rps'
@@ -122,33 +123,33 @@ class MetricCalculator:
     def _generic_metric(self, data, settings):
         return settings["metric"](data, settings)
 
-    # Calculate channel-wise entropy averaged over all channels
-    def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
-        if "p" in dimOrderTrg:
-            raise ValueError("Parallelizing over processes not applicable for this metric")
+    # # Calculate channel-wise entropy averaged over all channels
+    # def _avg_entropy_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
+    #     if "p" in dimOrderTrg:
+    #         raise ValueError("Parallelizing over processes not applicable for this metric")
+    #
+    #     valH = self.metric3D("avg_entropy", "p" + dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     return np.nanmean(valH, axis=0)
+    #
+    # # Calculate predictive info averaged over all channels
+    # def _avg_PI_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
+    #     if "p" in dimOrderTrg:
+    #         raise ValueError("Parallelizing over processes not applicable for this metric")
+    #
+    #     valPI = self.metric3D("avg_PI", "p" + dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     return np.nanmean(valPI, axis=0)
 
-        valH = self.metric3D("avg_entropy", "p" + dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        return np.nanmean(valH, axis=0)
-
-    # Calculate predictive info averaged over all channels
-    def _avg_PI_1D(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
-        if "p" in dimOrderTrg:
-            raise ValueError("Parallelizing over processes not applicable for this metric")
-
-        valPI = self.metric3D("avg_PI", "p" + dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        return np.nanmean(valPI, axis=0)
-
-    # Calculate total correlation
-    def _avg_TC(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
-        H1D = self._avg_entropy_1D(dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        HND = self.metric3D("avg_entropy", dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        return H1D - HND
-
-    # Calculate total predictive information
-    def _avg_TPI(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
-        PI1D = self._avg_PI_1D(dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        PIND = self.metric3D("avg_PI", dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
-        return PIND - PI1D
+    # # Calculate total correlation
+    # def _avg_TC(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
+    #     H1D = self._avg_entropy_1D(dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     HND = self.metric3D("avg_entropy", dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     return H1D - HND
+    #
+    # # Calculate total predictive information
+    # def _avg_TPI(self, dimOrderTrg, metricSettings=None, sweepSettings=None):
+    #     PI1D = self._avg_PI_1D(dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     PIND = self.metric3D("avg_PI", dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+    #     return PIND - PI1D
 
     def _is_metric_idtxl_mi_te(self, metricName):
         return metricName in ["BivariateMI", "BivariateTE", "MultivariateMI", "MultivariateTE"]
@@ -249,8 +250,8 @@ class MetricCalculator:
         # Preprocess sweep settings, in case some metrics need internal parallelization
         sweepSettings = self._preprocess(metricName, metricSettings, sweepSettings)
 
-        if metricName in self.compositeMetricDict.keys():
-            return self.compositeMetricDict[metricName](dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
+        # if metricName in self.compositeMetricDict.keys():
+        #     return self.compositeMetricDict[metricName](dimOrderTrg, metricSettings=metricSettings, sweepSettings=sweepSettings)
 
         # Pass additional fixed settings to the metric function
         if metricSettings is None:
