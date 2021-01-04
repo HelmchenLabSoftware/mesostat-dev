@@ -3,7 +3,6 @@ import numpy as np
 from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes
 from mesostat.metric.impl.time_splitter import split3D
 from mesostat.stat.machinelearning import drop_nan_rows
-from mesostat.stat.resampling import permutation
 
 import npeet.entropy_estimators as ee
 
@@ -21,14 +20,11 @@ def average_entropy_3D(data, settings):
 
 def average_tc_3D(data, settings):
     dataFlat = np.hstack(data)  # rps -> p(rs)
-    dataShuffle = np.array([permutation(d) for d in dataFlat])
+    dataShuffle = np.copy(dataFlat)
+    for iRow in range(dataShuffle.shape[0]):
+        np.random.shuffle(dataShuffle[iRow])
+
     return ee.kldiv(dataFlat.T, dataShuffle.T) / len(dataFlat)
-
-
-def average_entropy_3D_non_uniform(dataLst, settings):
-    dataFlat = np.hstack(dataLst)                    # Merge samples and repetitions
-    dataFlat = dataFlat.reshape(1, *dataFlat.shape)  # Add empty repetitions axis
-    return average_entropy_3D(dataFlat, settings)
 
 
 # Predictive information

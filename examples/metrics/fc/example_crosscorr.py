@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from mesostat.metric.metric import MetricCalculator
-from mesostat.utils.plotting import plot_matrix
+from mesostat.visualization.mpl_matrix import plot_matrix
 
 mc = MetricCalculator(serial=True, verbose=True)
 

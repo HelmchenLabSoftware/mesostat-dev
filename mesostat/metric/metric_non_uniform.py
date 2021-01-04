@@ -9,7 +9,7 @@ import mesostat.metric.sequence as sequence
 import mesostat.metric.stretch as stretch
 import mesostat.metric.pca as pca
 
-from mesostat.utils.arrays import test_uniform_dimension, get_list_shapes
+from mesostat.utils.arrays import get_list_shapes
 from mesostat.utils.sweep import SweepGeneratorNonUniform
 from mesostat.utils.parallel import GenericMapper
 
@@ -38,7 +38,7 @@ class MetricCalculatorNonUniform:
             "mar_testerr":          autoregression.mar_testerr_non_uniform,
             "mar_inp_testerr":      autoregression.mar_inp_testerr_non_uniform,
             "avgcorr":              corr.avg_corr_3D_non_uniform,
-            "avg_entropy":          npeet_wrapper.average_entropy_3D_non_uniform,
+            "avg_entropy":          npeet_wrapper.average_entropy_3D,
             "avg_PI":               npeet_wrapper.average_predictive_info_non_uniform,
             "rank_smooth":          pca.rank_smooth3D,
 
