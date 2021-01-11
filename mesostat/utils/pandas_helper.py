@@ -102,3 +102,12 @@ def merge_df_from_dict(dfDict, columnNames):
         rezDFList += [dfCopy]
 
     return pd.concat(rezDFList, sort=False).reset_index(drop=True)
+
+
+# Move some of the columns in front in that order, the rest stay in the same order at the end
+def pd_move_cols_front(df, colsMove):
+    colsNew = list(df.keys())
+    for col in colsMove[::-1]:
+        colsNew.insert(0, colsNew.pop(colsNew.index(col)))
+
+    return df.ix[:, colsNew]
