@@ -50,6 +50,17 @@ def progress_bar(i, imax, suffix=None):
 def get_subfolders(folderpath):
     return [_dir for _dir in os.listdir(folderpath) if os.path.isdir(os.path.join(folderpath, _dir))]
 
+
+# Find all finles in this folder (excluding subdirectories)
+def getfiles(inputpath, keys):
+    rez = []
+    for fname in  os.listdir(inputpath):
+        if os.path.isfile(os.path.join(inputpath, fname)):
+            if np.all([key in fname for key in keys]):
+                rez += [fname]
+    return np.array(rez)
+
+
 # Find all files in a given directory including subdirectories
 # All keys must appear in file name
 def getfiles_walk(inputpath, keys):

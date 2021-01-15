@@ -2,18 +2,23 @@ from sys import executable, argv
 from subprocess import check_output
 from PyQt5.QtWidgets import QFileDialog, QApplication
 
+
 def gui_fsave(title = "Select a file...", directory='./', filter="All files (*)"):
     return check_output([executable, __file__, "save", title, directory, filter]).strip().decode('UTF-8')
 
+
 def gui_fname(title = "Select a file...", directory='./', filter="All files (*)"):
     return check_output([executable, __file__, "file", title, directory, filter]).strip().decode('UTF-8')
+
 
 def gui_fnames(title = "Select a file...", directory='./', filter="All files (*)"):
     output = check_output([executable, __file__, "files", title, directory, filter]).strip().decode('UTF-8')
     return output[1:-1].replace("'", "").replace(' ', '').split(',')
 
+
 def gui_fpath(title="Select a path...", directory='./'):
     return check_output([executable, __file__, "folder", title, directory]).strip().decode('UTF-8')
+
 
 if __name__ == "__main__":
     param = argv[1:]
