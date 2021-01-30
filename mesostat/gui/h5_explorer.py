@@ -2,6 +2,8 @@ import numpy as np
 import h5py
 import pandas as pd
 
+from mesostat.utils.hdf5_helper import type_of_object
+
 class H5Explorer:
     def __init__(self, fname):
         self.fname = fname
@@ -36,21 +38,10 @@ class H5Explorer:
 
     def contents_by_path(self, path):
         obj = self.object_by_path(path)
-
         labels = list(obj.keys())
-        elemTypes = []
-        shapes = []
-        for label in labels:
-            if isinstance(obj[label], h5py.Dataset):
-                elemTypes += ['Dataset']
-                shapes += [obj[label].shape]
-            elif isinstance(obj[label], h5py.Group):
-                elemTypes += ['Group']
-                shapes += ['']
-            else:
-                raise ValueError('Unexpected H5PY element type', type(obj[label]))
-
-        return pd.DataFrame({'label': labels, 'type': elemTypes, 'shape' : shapes}).sort_values(by=['type'], ascending=False)
+        typesShapes = [type_of_object(obj[label]) for label in labels]
+        dfDict = {'label': labels, 'type': [e[0] for e in typesShapes], 'shape' : [e[1] for e in typesShapes]}
+        return pd.DataFrame(dfDict).sort_values(by=['type'], ascending=False)
 
     def object_current(self):
         return self.object_by_path(self.get_inner_path())

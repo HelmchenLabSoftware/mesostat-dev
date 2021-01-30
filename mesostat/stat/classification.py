@@ -1,5 +1,6 @@
 import numpy as np
 
+from sklearn.decomposition import PCA
 from sklearn.linear_model import RidgeClassifier, LogisticRegression
 from scipy.stats import hypergeom, binom_test
 
@@ -20,7 +21,7 @@ def _slice_train_test(x, iStart, iEnd):
 
 
 def kfold_iterator(x, y, k=10):
-    # 1. Permute the data just in case, to avoid very non-random initializations
+    # 1. Permute the trials to avoid local inter-trial dependencies
     nData = len(x)
     idxPerm = np.random.permutation(nData)
     xNew = x[idxPerm]
@@ -28,8 +29,8 @@ def kfold_iterator(x, y, k=10):
 
     delta = int(np.ceil(nData / k))
     for i in range(k):
-        xTrain, xTest = _slice_train_test(x, i*delta, (i + 1)*delta)
-        yTrain, yTest = _slice_train_test(y, i*delta, (i + 1)*delta)
+        xTrain, xTest = _slice_train_test(xNew, i*delta, (i + 1)*delta)
+        yTrain, yTest = _slice_train_test(yNew, i*delta, (i + 1)*delta)
         yield xTrain, yTrain, xTest, yTest
 
 
@@ -40,13 +41,34 @@ def leave_one_out_iterator(x, y):
         yield xTrain, yTrain, xTest, yTest
 
 
+def select_cv_iterator(method, x, y, k):
+    if method == "kfold":
+        return kfold_iterator(x, y, k)
+    elif method == "looc":
+        return leave_one_out_iterator(x, y)
+    else:
+        raise ValueError('Unexpected method', method)
+
+
+# Transform data to PCA domain, keep the largest PCAs for which the explained variance ratio sums up to a given fraction
+def dim_reduction(x, expVarRatioTot):
+    # Transform data to PCA domain
+    pca = PCA()
+    xPCA = pca.fit_transform(x)
+
+    # Threshold components by their explained variance
+    expVar = pca.explained_variance_ratio_
+    expVarCDF = np.add.accumulate(expVar)
+    nPCAThr = np.sum(expVarCDF < expVarRatioTot) + 1  # The borderline component that crosses the threshold should also be included
+    return xPCA[:, :nPCAThr]
+
+
 # Oversample the dataset, such that the number of datapoints for each class would be equal to that of the largest class
 # Oversampling for each class is done by random sampling from all points of that class
-def balance_oversample(x, y):
+def balance_oversample(x, y, classes):
     xNew = x.copy()
     yNew = y.copy()
 
-    classes = set(y)
     nDataPerClass = [np.count_nonzero(y == label) for label in classes]
     nDataMax = np.max(nDataPerClass)
     nExtraDataPerClass = [nDataMax - nData for nData in nDataPerClass]
@@ -61,8 +83,7 @@ def balance_oversample(x, y):
     return xNew, yNew
 
 
-def confusion_matrix(y1, y2):
-    labels = sorted(set(y1) | set(y2))
+def confusion_matrix(y1, y2, labels):
     nLabels = len(labels)
     rez = np.zeros((nLabels, nLabels), dtype=int)
     for i, label1 in enumerate(labels):
@@ -80,12 +101,17 @@ def weighted_accuracy(cm):
 # Use cross-validation to evaluate training and test accuracy
 # Resample a few times to get average training and test accuracy
 # TODO: https://machinelearningmastery.com/tactics-to-combat-imbalanced-classes-in-your-machine-learning-dataset/
-def binary_classifier(data1, data2, classifier, method="kfold", balancing=False, havePVal=False):
+def binary_classifier(data1, data2, classifier, method="kfold", k=10, balancing=False, pcaThr=None, havePVal=False):
     # Convert data to labeled form
-    x, y = label_binary_data(data1, data2, -1, 1)
+    labels = [-1, 1]
+    x, y = label_binary_data(data1, data2, *labels)
 
     # Drop NAN values
     xNoNan, yNoNan = drop_nan_rows([x, y])
+
+    if pcaThr is not None:
+        xNoNan = dim_reduction(xNoNan, pcaThr)
+        print('Reduced number of dimensions to', xNoNan.shape[1])
 
     # map labels to binary variable
     nData = len(yNoNan)
@@ -94,7 +120,7 @@ def binary_classifier(data1, data2, classifier, method="kfold", balancing=False,
         return {"acc_train": 0, "acc_test": 0, "acc_naive": 0, "p-value": 1}
 
     nA = np.sum(yNoNan == 1)  # Number of points with label 1
-    nB = nData - nA      # Number of points with label 0
+    nB = nData - nA      # Number of points with label -1
 
     if (nA < 2) or (nB < 2):
         print("Warning: unexpected number of labels", nA, nB, "; aborting classification")
@@ -103,22 +129,26 @@ def binary_classifier(data1, data2, classifier, method="kfold", balancing=False,
     # Add extra dimension if X is 1D
     if xNoNan.ndim == 1:
         xNoNan = xNoNan[:, None]
+        print('Warning: Got 1D data, had to add extra dimension')
 
     cmTrain = np.zeros((2, 2), dtype=int)
     cmTest = np.zeros((2, 2), dtype=int)
 
-    cvfunc = kfold_iterator(x, y) if method == "kfold" else leave_one_out_iterator(xNoNan, yNoNan)
+    cvfunc = select_cv_iterator(method, xNoNan, yNoNan, k)
     for xTrain, yTrain, xTest, yTest in cvfunc:
         if balancing:
-            xTrainEff, yTrainEff = balance_oversample(xTrain, yTrain)
+            xTrainEff, yTrainEff = balance_oversample(xTrain, yTrain, labels)
         else:
             xTrainEff, yTrainEff = xTrain, yTrain
 
         clf = classifier.fit(xTrainEff, yTrainEff)
         # LogisticRegression(max_iter=1000)
 
-        cmTrain += confusion_matrix(clf.predict(xTrain), yTrain)
-        cmTest += confusion_matrix(clf.predict(xTest), yTest)
+        cmTrain += confusion_matrix(clf.predict(xTrain), yTrain, labels)
+        cmTest += confusion_matrix(clf.predict(xTest), yTest, labels)
+
+    # print('cmTrain\n', cmTrain)
+    # print('cmTest\n', cmTest)
 
     # Accuracy
     accTrain = weighted_accuracy(cmTrain)
