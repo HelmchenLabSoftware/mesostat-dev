@@ -28,6 +28,13 @@ def zscore_list(lst):
     return [(data - mu)/std for data in lst]
 
 
+# Get the approximation of y, fitted using x
+def polyfit_transform(x, y, ord=1):
+    param = np.polyfit(x, y, ord)
+    poly = np.poly1d(param)
+    return poly(x)
+
+
 # Bin data by splitting it into N bins of equal number of datapoints
 # For each datapoint, return bin index to which it belongs
 def bin_data_1D(data, nBins):

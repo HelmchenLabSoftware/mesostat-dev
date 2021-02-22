@@ -37,6 +37,16 @@ def offdiag_1D_nonnan(M):
     return MOffDiag[~np.isnan(MOffDiag)]
 
 
+def tril_1D(M):
+    idxs = np.tril_indices(M.shape[0], k=-1)
+    return M[idxs]
+
+
+def triu_1D(M):
+    idxs = np.triu_indices(M.shape[0], k=1)
+    return M[idxs]
+
+
 # Construct a matrix where some upper off-diagonal is filled with ones
 def setDiagU(n, sh, baseline=0):
     M = np.full((n, n), baseline)

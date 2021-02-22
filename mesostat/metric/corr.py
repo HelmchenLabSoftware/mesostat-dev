@@ -16,11 +16,12 @@ def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
 # p-value of a single correlation between two scalar variables
 # Null hypothesis: Both variables are standard normal variables
 # Problem 1: When evaluating corr matrix, not clear how to Bonferroni-correct, because matrix entries are not independent
-# Problem 2: Frequently the question if interest is comparing two scenarios with non-zero correlation, as opposed to comparing one scenario to 0 baseline
-def corr_significance(c, nData):
-    t = c * np.sqrt((nData - 2) / (1 - c**2))
-    t[t == np.nan] = np.inf
-    return scipy.stats.t(nData).pdf(t)
+# Problem 2: Frequently the question of interest is comparing two scenarios with non-zero correlation, as opposed to comparing one scenario to 0 baseline
+def corr_significance(cc, nData):
+    with np.errstate(divide='ignore'):
+        t = -np.abs(cc) * np.sqrt((nData - 2) / (1 - cc**2))
+        t[t == np.nan] = np.inf
+        return scipy.stats.t.cdf(t, nData - 2) * 2  # Multiply by two because two-sided
 
 
 # Correlation. Requires leading dimension to be channels
@@ -30,10 +31,17 @@ def corr_2D(x2D, y2D=None, settings=None):
     est = settings['estimator'] if settings is not None and 'estimator' in settings.keys() else 'corr'
     havePVal = settings['havePVal'] if (settings is not None) and ('havePVal' in settings.keys()) and settings['havePVal'] else False
 
-    nChannel, nData = x2D.shape
+    nChannelX, nData = x2D.shape
+    if y2D is not None:
+        nChannelY, nDataY = y2D.shape
+        assert nChannelX == nChannelY, 'Both arrays must have the same number of datapoints'
+    else:
+        nChannelY = 0
 
-    if nChannel <= 1:
-        raise ValueError("Correlation requires at least 2 channels, got", nChannel)
+    nChannelTot = nChannelX + nChannelY
+
+    if nChannelTot <= 1:
+        raise ValueError("Correlation requires at least 2 channels, got", nChannelX, nChannelY)
 
     if nData <= 1:
         raise ValueError("Correlation requires at least 2 samples, got", nData)
@@ -50,7 +58,7 @@ def corr_2D(x2D, y2D=None, settings=None):
         rez, pval = scipy.stats.spearmanr(x2D, y2D, axis=1)
 
         # SPR has this "great" idea of only returning 1 number if exactly 2 channels are used
-        if (nChannel == 2) and (y2D is None):
+        if nChannelTot == 2:
             coeff2mat = lambda d, c: np.array([[d, c],[c, d]])
             rez = coeff2mat(1, rez)
             pval = coeff2mat(np.nan, pval)
@@ -63,11 +71,27 @@ def corr_2D(x2D, y2D=None, settings=None):
         raise ValueError('unexpected estimator type', est)
 
 
+# Preprocess time-axis as requested in settings
+def preprocess_3D(dataCanon, settings):
+    # Compute time-average if requested, otherwise consider samples as extra trials
+    if 'timeAvg' in settings and settings['timeAvg']:
+        return np.mean(dataCanon, axis=1)
+    else:
+        return numpy_merge_dimensions(dataCanon, 1, 3)
+
+
+def preprocess_3D_non_uniform(dataLst, settings):
+    if 'timeAvg' in settings and settings['timeAvg']:
+        return np.array([np.mean(x, axis=1) for x in dataLst])
+    else:
+        return np.hstack(dataLst)
+
+
 # If data has trials, concatenate trials into single timeline when computing correlation
 def corr_3D(data, settings):
     # Convert to canonical form
     dataCanon = numpy_transpose_byorder(data, 'rps', 'psr')
-    dataFlat = numpy_merge_dimensions(dataCanon, 1, 3)
+    dataFlat = preprocess_3D(dataCanon, settings)
 
     return corr_2D(dataFlat, settings=settings)
 
@@ -79,7 +103,8 @@ def avg_corr_3D(data, settings):
 
 
 def corr_3D_non_uniform(dataLst, settings):
-    return corr_2D(np.hstack(dataLst), settings=settings)
+    dataFlat = preprocess_3D_non_uniform(dataLst, settings)
+    return corr_2D(dataFlat, settings=settings)
 
 
 def avg_corr_3D_non_uniform(dataLst, settings):
@@ -112,8 +137,8 @@ def cross_corr_3D(data, settings):
     if nTime <= lag:
         raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nTime)
 
-    xx = numpy_merge_dimensions(dataOrd[:, :nTime - lag], 1, 3)
-    yy = numpy_merge_dimensions(dataOrd[:, lag:], 1, 3)
+    xx = preprocess_3D(dataOrd[:, :nTime - lag], settings)
+    yy = preprocess_3D(dataOrd[:, lag:], settings)
 
     # Only interested in x-y correlations, crop x-x and y-y
     return corr_2D(xx, yy, settings=settings)[:nNode, nNode:]
@@ -140,8 +165,8 @@ def cross_corr_non_uniform_3D(dataLst, settings):
     if nTimeMin <= lag:
         raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nTimeMin)
 
-    xx = np.hstack([data[:, lag:] for data in dataLst])
-    yy = np.hstack([data[:, :-lag] for data in dataLst])
+    xx = preprocess_3D_non_uniform([data[:, lag:] for data in dataLst], settings)
+    yy = preprocess_3D_non_uniform([data[:, :-lag] for data in dataLst], settings)
 
     # Only interested in x-y correlations, crop x-x and y-y
     return corr_2D(xx, yy, settings=settings)[nNode:, :nNode]

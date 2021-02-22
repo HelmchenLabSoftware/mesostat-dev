@@ -57,7 +57,7 @@ def redirect_stdout(func):
 
         orig_stdout = sys.stdout
         fname = 'log_' + str(procId) + '.txt'
-        with open(fname, 'w') as f:
+        with open(fname, 'w+') as f:
             #print("Redirecting STDOUT to", fname, flush=True)
             sys.stdout = f
             rez = func(*args, **kwargs)

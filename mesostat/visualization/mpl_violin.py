@@ -8,7 +8,9 @@ from statannot import add_stat_annotation
 from mesostat.stat.testing.htests import mannwhitneyu_nan_aware
 
 
-def violins_labeled(ax, dataLst, dataLabels, paramName, metricName, joinMeans=True, haveLog=False, sigTestPairs=None, printLogP=False, violinInner=None):
+def violins_labeled(ax, dataLst, dataLabels, paramName, metricName,
+                    joinMeans=True, haveLog=False, sigTestPairs=None, style='violin',
+                    printLogP=False, violinInner=None, violinScale='area'):
     '''
     :param ax: plot axis
     :param dataLst: 1D datasets for each violin. Can be different length
@@ -34,7 +36,10 @@ def violins_labeled(ax, dataLst, dataLabels, paramName, metricName, joinMeans=Tr
     #####################
     # Plot violins
     #####################
-    sns.violinplot(ax=ax, data=df, x=paramName, y=metricName, cut=0, inner=violinInner)
+    if style == 'violin':
+        sns.violinplot(ax=ax, data=df, x=paramName, y=metricName, cut=0, inner=violinInner, scale=violinScale)
+    elif style == 'bar':
+        sns.barplot(ax=ax, data=df, x=paramName, y=metricName)
 
     #####################
     # Plot annotation
@@ -48,7 +53,8 @@ def violins_labeled(ax, dataLst, dataLabels, paramName, metricName, joinMeans=Tr
                   "of data size", (len(dataLst[i]), len(dataLst[j])),
                   "rank-sum-test is", mannwhitneyu(dataLst[i], dataLst[j], alternative='two-sided')[1])
 
-        add_stat_annotation(ax, data=df, x=paramName, y=metricName, box_pairs=labelPairs, test='Mann-Whitney', loc='inside', verbose=0)  # , text_format='full'
+        add_stat_annotation(ax, data=df, x=paramName, y=metricName, box_pairs=labelPairs,
+                            test='Mann-Whitney', loc='inside', verbose=0)  # , text_format='full'
 
     #####################
     # Join Means

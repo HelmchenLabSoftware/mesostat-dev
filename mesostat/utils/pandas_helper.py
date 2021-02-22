@@ -110,4 +110,4 @@ def pd_move_cols_front(df, colsMove):
     for col in colsMove[::-1]:
         colsNew.insert(0, colsNew.pop(colsNew.index(col)))
 
-    return df.ix[:, colsNew]
+    return df.loc[:, colsNew]

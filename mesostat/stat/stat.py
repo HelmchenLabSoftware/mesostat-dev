@@ -21,6 +21,14 @@ def log_likelihood(pLst, axis=0):
     return -2 * np.sum(np.log(pLst), axis=axis)
 
 
+# Compute empirical CDF from
+def continuous_empirical_CDF(sample):
+    x = np.sort(sample)
+    x = np.hstack([x[0], x])
+    y = np.linspace(0, 1, len(x))
+    return x, y
+
+
 # Convert discrete PDF into CDF
 def discrete_CDF(p):
     nCDF = len(p) + 1
