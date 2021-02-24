@@ -9,7 +9,7 @@ import mesostat.metric.sequence as sequence
 import mesostat.metric.stretch as stretch
 import mesostat.metric.pca as pca
 
-from mesostat.utils.arrays import get_list_shapes
+from mesostat.utils.arrays import set_list_shapes
 from mesostat.utils.sweep import SweepGeneratorNonUniform
 from mesostat.utils.parallel import GenericMapper
 
@@ -71,7 +71,7 @@ class MetricCalculatorNonUniform:
     def set_data(self, dataLst, zscoreChannel=False):
         assert len(dataLst) > 0, "Attempted to set data with zero trials"
         assert np.all([d.ndim == 2 for d in dataLst]), "For each trial must have exactly 2D array of shape [nChannel, nSample]"
-        self.nChannelMatch = len(get_list_shapes(dataLst, axis=0)) == 1
+        self.nChannelMatch = len(set_list_shapes(dataLst, axis=0)) == 1
 
         # zscore whole data array if requested
         if zscoreChannel:

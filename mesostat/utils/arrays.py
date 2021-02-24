@@ -1,12 +1,21 @@
 import bisect
 import numpy as np
 
+
+########################################
+# Algorithms
+########################################
+
 # Compute indices of slice of sorted data which fit into the provided range
 def slice_sorted(data, rng):
     return [
         bisect.bisect_left(data, rng[0]),
         bisect.bisect_right(data, rng[1])]
 
+
+########################################
+# Permutation operations
+########################################
 
 # Finds permutation map A->B of elements of two arrays, which are permutations of each other
 def perm_map_arr(a, b):
@@ -17,6 +26,10 @@ def perm_map_arr(a, b):
 def perm_map_str(a, b):
     return perm_map_arr(np.array(list(a)), np.array(list(b)))
 
+
+########################################
+# Set operations
+########################################
 
 # Returns set subtraction of s1 - s2, preserving order of s1
 def unique_subtract(s1, s2):
@@ -31,38 +44,50 @@ def unique_subtract(s1, s2):
         raise ValueError("Unexpected Type", type(s1))
 
 
+########################################
+# Non-uniform dimension array lists
+########################################
+
 # Test if a given dimension is part of a dimension order
-def test_have_dim(task, dimOrd, trgDim):
+def assert_get_dim_idx(dimOrd, trgDim, label="TASK_NAME", canonical=False):
+    if trgDim in dimOrd:
+        return dimOrd.index(trgDim)
     if trgDim not in dimOrd:
-        dimNameDict = {
-            "p": "processes (aka channels)",
-            "s": "samples (aka times)",
-            "r": "repetitions (aka trials)"
-        }
-        raise ValueError(task, "requires", dimNameDict[trgDim], "dimension; have", dimOrd)
+        if canonical:
+            dimNameDict = {
+                "p": "processes (aka channels)",
+                "s": "samples (aka times)",
+                "r": "repetitions (aka trials)"
+            }
+            raise ValueError(label, "requires", dimNameDict[trgDim], "dimension; have", dimOrd)
+        else:
+            raise ValueError(label, "not found", trgDim, "in", dimOrd)
 
 
-# Test that along a given dimension all shapes are equal
-def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
-    if dimEqual in dataDimOrder:
-        idxSample = dataDimOrder.index(dimEqual)
-        shapeArr = np.array([d.shape for d in dataLst]).T
-        assert np.all(shapeArr[idxSample] == shapeArr[idxSample][0]), "All trials are required to have the same number of channels"
+########################################
+# Non-uniform dimension array lists
+########################################
 
-
-def get_list_shapes(lst, axis=None):
+def set_list_shapes(lst, axis=None):
     if axis is None:
         return list(set([elem.shape for elem in lst]))
     else:
         return list(set([elem.shape[axis] for elem in lst]))
 
 
-def get_uniform_dim_shape(lst, axis=None):
-    shapes = get_list_shapes(lst, axis)
+def list_assert_get_uniform_shape(lst, axis=None):
+    if len(lst) == 0:
+        raise ValueError("Got empty list")
+
+    shapes = set_list_shapes(lst, axis)
     if len(shapes) > 1:
         raise ValueError("Expected uniform shapes for axis", axis, "; got", shapes)
     return next(iter(shapes))
 
+
+########################################
+# Multivariate dimension operations
+########################################
 
 
 # Transpose data dimensions given permutation of axis labels

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes, get_uniform_dim_shape
+from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, set_list_shapes, list_assert_get_uniform_shape
 from mesostat.stat.connectomics import offdiag_1D
 
 
@@ -159,8 +159,8 @@ def cross_corr_non_uniform_3D(dataLst, settings):
 
     # Test that all trials have the same number of
     # Test that all trials have sufficient timesteps for lag estimation
-    nNode = get_uniform_dim_shape(dataLst, axis=0)
-    nTimeMin = np.min(get_list_shapes(dataLst, axis=1))
+    nNode = list_assert_get_uniform_shape(dataLst, axis=0)
+    nTimeMin = np.min(set_list_shapes(dataLst, axis=1))
 
     if nTimeMin <= lag:
         raise ValueError('lag', lag, 'cannot be estimated for number of timesteps', nTimeMin)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, get_list_shapes
+from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, set_list_shapes
 from mesostat.metric.impl.time_splitter import split3D
 from mesostat.stat.machinelearning import drop_nan_rows
 
@@ -42,7 +42,7 @@ def average_predictive_info(data, settings):
 
 def average_predictive_info_non_uniform(dataLst, settings):
     # Test that all trials have sufficient timesteps for lag estimation
-    nSampleMin = np.min(get_list_shapes(dataLst, axis=1))
+    nSampleMin = np.min(set_list_shapes(dataLst, axis=1))
     if nSampleMin <= settings['max_lag']:
         raise ValueError('lag', settings['max_lag'], 'cannot be estimated for number of timesteps', nSampleMin)
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, get_uniform_dim_shape
+from mesostat.utils.arrays import numpy_merge_dimensions, list_assert_get_uniform_shape
 
 
 def split2D(data2D, nHist):
@@ -71,7 +71,7 @@ def split3D(data, nHist):
 
 def split3D_non_uniform(dataLst, nHist):
     # Test that the number of channels is uniform
-    nChannel = get_uniform_dim_shape(dataLst, axis=1)
+    nChannel = list_assert_get_uniform_shape(dataLst, axis=1)
 
     # sample windows over time (rps) -> (rspw)
     rez = []

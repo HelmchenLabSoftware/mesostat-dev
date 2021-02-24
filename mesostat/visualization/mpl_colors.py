@@ -2,6 +2,7 @@ import numpy as np
 import colorsys
 from scipy import interpolate
 from matplotlib.colors import ListedColormap
+import matplotlib.pyplot as plt
 
 
 def random_colors(num_colors):
@@ -35,3 +36,24 @@ def custom_grad_cmap(colorArr):
     vals[:, 1] = interpolate.interp1d(x0, colorArrEff[:, 1], kind='linear')(x)
     vals[:, 2] = interpolate.interp1d(x0, colorArrEff[:, 2], kind='linear')(x)
     return ListedColormap(vals)
+
+
+def sample_cmap(cmap, arr, vmin=None, vmax=None):
+    arrTmp = np.array(arr)
+
+    # Test if samples in correct range
+    if vmin is None:
+        vmin = np.min(arrTmp)
+    else:
+        assert np.min(arrTmp) >= vmin
+
+    if vmax is None:
+        vmax = np.max(arrTmp)
+    else:
+        assert np.max(arrTmp) <= vmax
+
+    arrNorm = (arrTmp - vmin) / (vmax - vmin)
+    arrNorm = np.clip(arrNorm, 0, 1)
+
+    cmapFunc = plt.get_cmap(cmap)
+    return [cmapFunc(elNorm) for elNorm in arrNorm]

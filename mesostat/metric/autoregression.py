@@ -1,7 +1,7 @@
 import numpy as np
 
 from mesostat.utils.signals import zscore, zscore_list
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim, get_uniform_dim_shape
+from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, list_assert_get_uniform_shape
 import mesostat.metric.impl.ar as ar
 import mesostat.metric.impl.mar as mar
 import mesostat.metric.impl.mar_inp as mar_inp
@@ -105,7 +105,7 @@ def _preprocess_mar_inp_non_uniform(dataLst, inpLst, nHist):
         assert inp.shape[1] == data.shape[1], "Input must have same number of timesteps as data"
 
     # Test that input has the same number of features for each trial
-    nChInp = get_uniform_dim_shape(inpLst, axis=1)
+    nChInp = list_assert_get_uniform_shape(inpLst, axis=1)
 
     # shape transform for y :: (rps) -> (r*s, p)
     u = [inp[:, nHist:].T for inp in inpLst]   # (rps) -> (rsp)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, test_have_dim
+from mesostat.utils.arrays import numpy_merge_dimensions
 from mesostat.utils.signals import zscore
 from mesostat.stat.stat import mu_std
 

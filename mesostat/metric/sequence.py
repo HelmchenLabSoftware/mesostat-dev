@@ -4,8 +4,8 @@ from scipy.stats import ttest_ind_from_stats
 from scipy.stats.mstats import gmean
 from scipy.ndimage import gaussian_filter
 
-from mesostat.utils.arrays import numpy_transpose_byorder, test_have_dim, get_uniform_dim_shape, get_list_shapes
-from mesostat.stat.stat import discrete_CDF, convert_pmf
+from mesostat.utils.arrays import list_assert_get_uniform_shape, set_list_shapes
+from mesostat.stat.stat import convert_pmf
 from mesostat.stat.connectomics import offdiag_1D
 from mesostat.stat.moments import discrete_mean_var
 
@@ -25,8 +25,8 @@ def _test_data_consistent_run(data, settings, func, lowtrialResult):
 
 def _test_data_consistent_run_non_uniform(data2DLst, settings, func, lowtrialResult):
     nTrial = len(data2DLst)
-    nChannel = get_uniform_dim_shape(data2DLst, 0)
-    nTimeMin = np.min(get_list_shapes(data2DLst, 1))
+    nChannel = list_assert_get_uniform_shape(data2DLst, 0)
+    nTimeMin = np.min(set_list_shapes(data2DLst, 1))
 
     if nChannel <= 1:
         raise ValueError("need at least 2 channels to evaluate orderability")
