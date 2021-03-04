@@ -6,7 +6,9 @@ rstest_twosided = lambda x, y : mannwhitneyu(x, y, alternative='two-sided')
 
 # Computes 1D empirical tolerance interval by determining (1 - sigma)/2 percentile
 # TODO: This approach has several problems:
-#     * Not necessarily correct question. In practice ppl use "Prediction Interval", which guesses the interval where the next point is likely to land. Estimation relatively complex, requires regressors
+#     * Not necessarily correct question. In practice ppl use "Prediction Interval",
+#       which guesses the interval where the next point is likely to land.
+#       Estimation relatively complex, requires regressors
 #     * Does not behave well if number of points is small
 #     * If function strongly asymmetric, may introduce significant bias
 def tolerance_interval(x, p):

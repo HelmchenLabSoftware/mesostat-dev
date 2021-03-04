@@ -110,7 +110,7 @@ def numpy_transpose_byorder(data, orderSrc, orderTrg, augment=False):
         return data.reshape(newShape).transpose(perm_map_str(newOrder, orderTrg))
 
 
-# Return original shape, but replace all axis that have been reduced with ones
+# Return original shape, but replace all axis that have been reduced with 1s
 # So final shape looks as if it is of the same dimension as original
 # Useful for broadcasting reduced arrays onto original arrays
 def numpy_shape_reduced_axes(shapeOrig, reducedAxis):

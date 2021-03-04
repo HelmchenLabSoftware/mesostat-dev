@@ -1,4 +1,6 @@
 import numpy as np
 
-def entropy_discrete_1D(p1d):
-    return -np.sum([p * np.log(p) for p in p1d])
+
+# Compute Shannon Entropy given 1D discrete PMF
+def entropy_discrete_1D(p):
+    return -np.sum(p.dot(np.log(p)))
