@@ -1,7 +1,7 @@
 import numpy as np
 
 from mesostat.metric.impl.basis_projector import BasisProjector
-from mesostat.utils.signals import resample
+from mesostat.utils.signals.resample import resample
 
 
 # Evaluate first few projections to Legendre basis

@@ -5,36 +5,6 @@ from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes, numpy_
 from mesostat.stat.stat import gaussian
 
 
-def zscore(x, axis=None):
-    shapeNew = numpy_shape_reduced_axes(x.shape, axis)
-    mu = np.nanmean(x, axis=axis).reshape(shapeNew)
-    std = np.nanstd(x, axis=axis).reshape(shapeNew)
-    return (x - mu) / std
-
-
-def zscore_dim_ord(x, dimOrdSrc, dimOrdZ=None):
-    if dimOrdZ is not None:
-        axisZScore = tuple([i for i, e in enumerate(dimOrdSrc) if e in dimOrdZ])
-        return zscore(x, axisZScore)
-    else:
-        return x
-
-
-# ZScore list of arrays, computing mean and std from concatenated data
-def zscore_list(lst):
-    xFlat = np.hstack([data.flatten for data in lst])
-    mu = np.nanmean(xFlat)
-    std = np.nanstd(mu)
-    return [(data - mu)/std for data in lst]
-
-
-# Get the approximation of y, fitted using x
-def polyfit_transform(x, y, ord=1):
-    param = np.polyfit(x, y, ord)
-    poly = np.poly1d(param)
-    return poly(x)
-
-
 # Bin data by splitting it into N bins of equal number of datapoints
 # For each datapoint, return bin index to which it belongs
 def bin_data_1D(data, nBins):
@@ -57,23 +27,6 @@ def bin_data(data, nBins, axis=0):
 
     # Move the binned dimension back to where it was originally
     return numpy_move_dimension(np.array(rezLst), 0, axis)
-
-
-# Compute discretized exponential decay convolution
-# Works with multidimensional arrays, as long as shapes are the same
-def approx_decay_conv(data, tau, dt):
-    dataShape = data.shape
-    nTimesTmp = dataShape[0] + 1   # Temporary data 1 longer because recursive formula depends on past
-    tmpShape = (nTimesTmp, ) + dataShape[1:]
-
-    alpha = dt / tau
-    beta = 1-alpha
-    
-    rez = np.zeros(tmpShape)
-    for i in range(1, nTimesTmp):
-        rez[i] = data[i-1]*alpha + rez[i-1]*beta
-
-    return rez[1:]  # Remove first element, because it is zero and meaningless. Get same shape as original data
 
 
 # Downsample uniformly-spaced points by grouping them together and taking averages

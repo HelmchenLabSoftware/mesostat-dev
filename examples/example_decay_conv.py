@@ -1,10 +1,9 @@
 # import standard libraries
-import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
 # import mesostat
-from mesostat.utils.signals import approx_decay_conv
+from mesostat.utils.signals.resample import approx_decay_conv
 
 # Create signal
 DT =  0.001   # s

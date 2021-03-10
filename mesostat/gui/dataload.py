@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/alyosha/work/git/mesostat-dev/mesostat/gui/dataload.ui'
+# Form implementation generated from reading ui file '/media/aleksejs/DataHDD/work/codes/comp-neuro/analysis-mesoscopic/mesostat-dev/mesostat/gui/dataload.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.0
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_DataLoad(object):
     def setupUi(self, DataLoad):
@@ -90,3 +88,4 @@ class Ui_DataLoad(object):
         self.pathDataButton.setText(_translate("DataLoad", "Data Path..."))
         self.dataLoadCancelButton.setText(_translate("DataLoad", "Cancel"))
         self.dataLoadOkButton.setText(_translate("DataLoad", "Ok"))
+

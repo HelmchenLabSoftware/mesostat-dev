@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.signals import zscore
+from mesostat.utils.signals.resample import zscore
 
 ###########################
 # Test 2D

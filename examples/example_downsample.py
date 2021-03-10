@@ -9,12 +9,11 @@ DO NOT USE SAME PROCEDURE FOR UPSAMPLING AND DOWNSAMPLING
 '''
 
 # import standard libraries
-import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
 # import special libraries
-from mesostat.utils.signals import resample
+from mesostat.utils.signals.resample import resample
 
 ##########################
 # Downsampling

@@ -1,6 +1,6 @@
 import numpy as np
 
-from mesostat.utils.signals import zscore, zscore_list
+from mesostat.utils.signals.resample import zscore, zscore_list
 from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, list_assert_get_uniform_shape
 import mesostat.metric.impl.ar as ar
 import mesostat.metric.impl.mar as mar
