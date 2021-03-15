@@ -1,7 +1,7 @@
 import numpy as np
 
 from mesostat.utils.arrays import numpy_transpose_byorder
-from mesostat.utils.signals.resample import zscore_dim_ord
+from mesostat.utils.signals.filter import zscore_dim_ord
 from mesostat.metric.corr import corr_3D, cross_corr_3D, avg_corr_3D
 from mesostat.metric.autocorr import autocorr_3D, autocorr_d1_3D
 import mesostat.metric.npeet as npeet

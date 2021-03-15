@@ -3,7 +3,7 @@ from scipy.special import legendre
 
 class BasisProjector:
     def __init__(self, nStep, order=5):
-        self.poly = [legendre(iOrd) for iOrd in range(order)]
+        self.poly = [legendre(iOrd) for iOrd in range(order+1)]
 
         # Sample in midpoints in order to reduce finite sample error
         x = np.linspace(-1, 1, nStep, endpoint=False) + 1 / nStep
@@ -12,4 +12,8 @@ class BasisProjector:
         self.polysample = np.array([rez / nrm for rez, nrm in zip(rezLst, nrmLst)])
 
     def project(self, data):
-        return self.polysample.dot(data)
+        self.coeff = self.polysample.dot(data)
+        return self.coeff
+
+    def predict(self):
+        return self.coeff.dot(self.polysample)

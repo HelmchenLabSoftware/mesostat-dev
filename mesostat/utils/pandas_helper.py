@@ -71,7 +71,7 @@ def pd_vstack_df(dfLst, colName, colVals):
 # TODO: Test that dataframe values are exactly the same except of split cols
 def pd_merge_equivalent_df(dfLst, splitColNames, dfNames):
     dfRez = dfLst[0].copy()
-    dfRez = dfRez.drop(splitColNames)
+    dfRez = dfRez.drop(splitColNames, axis=1)
     for df, dfName in zip(dfLst, dfNames):
         for colName in splitColNames:
             dfRez[colName + '_' + dfName] = df[colName]
@@ -111,3 +111,25 @@ def pd_move_cols_front(df, colsMove):
         colsNew.insert(0, colsNew.pop(colsNew.index(col)))
 
     return df.loc[:, colsNew]
+
+
+def pd_category_to_column(df, catName, rezName):
+    '''
+    :param df:       Pandas Dataframe
+    :param catName:  Name of the column containing categorical data
+    :param rezName:  Name of the column containing non-categorical data (e.g. float)
+    :return:         Pandas Dataframe
+
+    Input a dataframe that has all columns categorical except one.
+    Also input the name of one of the categorical columns.
+    Drop that categorical column column. Instead, create a column for each value of categorical data,
+    with values of the non-categorical column
+    '''
+
+    categories = set(df[catName])
+    rez = pd.DataFrame()
+    for catVal in categories:
+        dfThis = df[df[catName] == catVal]
+        dfThis.rename(columns={rezName: catVal}, inplace=True)
+        rez = rez.append(dfThis)
+    return rez.reset_index()

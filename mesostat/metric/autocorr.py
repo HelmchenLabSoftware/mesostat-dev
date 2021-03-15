@@ -1,7 +1,7 @@
 import numpy as np
 
 from mesostat.utils.arrays import numpy_merge_dimensions
-from mesostat.utils.signals.resample import zscore
+from mesostat.utils.signals.filter import zscore
 from mesostat.stat.stat import mu_std
 
 
