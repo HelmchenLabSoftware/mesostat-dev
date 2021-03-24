@@ -56,7 +56,10 @@ def downsample_int(x1, y1, nt):
 
 # Kernel for gaussian downsampling
 # Can later downsample any dataset with exactly the same sampling points simply multiplying it by the kernel
-def resample_kernel(x1, x2, sig2):
+def resample_kernel(x1, x2, sig2=None):
+    if sig2 is None:
+        sig2 = (x2[1] - x2[0]) ** 2 / 4
+
     # Each downsampled val is average of all original val weighted by proximity kernel
     n1 = x1.shape[0]
     n2 = x2.shape[0]

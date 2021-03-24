@@ -161,6 +161,32 @@ def binary_classifier(data1, data2, classifier, method="kfold", k=10, balancing=
     return rez
 
 
+def cross_temporal_decoding(dataRPS1, dataRPS2, classifier, balancing=False):
+    '''
+    Algorithm:
+    1. Loop t1, t2 over all timesteps
+    2. Train classifier on t1, evaluate classifier at t2
+    3. Plot accuracy
+    '''
+    nTime = dataRPS1.shape[2]
+
+    rez = np.zeros((nTime, nTime))
+
+    for t1 in range(nTime):
+        print(t1)
+        x1, y1 = label_binary_data(dataRPS1[:, :, t1], dataRPS2[:, :, t1], -1, 1)
+        if balancing:
+            x1, y1 = balance_oversample(x1, x1, [-1, 1])
+
+        clf = classifier.fit(x1, y1)
+
+        for t2 in range(nTime):
+            x2, y2 = label_binary_data(dataRPS1[:, :, t2], dataRPS2[:, :, t2], -1, 1)
+            rez[t1][t2] = clf.score(x2, y2)
+
+    return rez
+
+
 def test_classifier_significance(nA, nB, cm):
     nTestTot = np.sum(cm)
     nTestPassed = np.sum(np.diag(cm))
