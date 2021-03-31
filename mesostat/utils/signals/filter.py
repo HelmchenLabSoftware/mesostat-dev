@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import interpolate
+from sklearn.decomposition import PCA
 
 from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes, numpy_move_dimension
 from mesostat.stat.stat import gaussian
@@ -26,6 +27,15 @@ def zscore_list(lst):
     mu = np.nanmean(xFlat)
     std = np.nanstd(mu)
     return [(data - mu)/std for data in lst]
+
+
+# Remove first few principal components from data. Returns data in original space (not PCA space)
+def drop_PCA(dataRP, nPCA=1):
+    pca = PCA(n_components=dataRP.shape[1])
+    y = pca.fit_transform(dataRP)
+    M = pca.components_
+    y[:, :nPCA] = 0
+    return y.dot(M)
 
 
 # Compute discretized exponential decay convolution

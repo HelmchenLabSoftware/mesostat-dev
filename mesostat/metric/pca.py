@@ -30,8 +30,12 @@ def erank2D(data2D):
     :return: scalar - effective rank
     '''
 
-    if len(data2D) <= 1:
+    nChannels, nSamples = data2D.shape
+
+    if nChannels <= 1:
         return 1
+    elif nSamples < nChannels:
+        raise ValueError('Attempted to estimate correlation for shape with too few samples', data2D.shape)
     else:
         corr = np.corrcoef(data2D)
         eig = np.linalg.eigvals(corr)

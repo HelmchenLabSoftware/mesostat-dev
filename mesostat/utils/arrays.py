@@ -161,27 +161,22 @@ def numpy_take_all(a, axes, indices):
 # Convert whole thing to array
 def numpy_nonelist_to_array(lst):
     noneIdxs = np.array([elem is None for elem in lst]).astype(bool)
+    if np.all(~noneIdxs):
+        # All arrays present
+        return np.array(lst)
     if np.all(noneIdxs):
         raise ValueError("List only contains None values, can't figure out shape")
 
-    firstNonNoneIdx = np.where(~noneIdxs)[0][0]
-    baseDim = lst[firstNonNoneIdx].ndim
+    # For all normal arrays, check that their shape is the same
+    trgShape = list_assert_get_uniform_shape([elem for elem in lst if elem is not None])
+    baseDim = len(trgShape)
     if baseDim == 0:
         # have a list of scalar values
-        none2nan = lambda val : val if val is not None else np.nan
-        return np.array([none2nan(val) for val in lst])
+        return np.array([val if val is not None else np.nan for val in lst])
     else:
-        # Have a list of arrays
-        baseShape = lst[firstNonNoneIdx].shape
-        nonePatch = np.full(baseShape, np.nan)
-        rezLst = []
-        for elem in lst:
-            if elem is None:   # Replace all None's with NAN arrays of correct shape
-                rezLst += [nonePatch]
-            else:  # For all normal arrays, check that their shape is the same
-                assert elem.shape == baseShape
-                rezLst += [elem]
-        return np.array(rezLst)
+        # Replace all None's with NAN arrays of correct shape
+        nonePatch = np.full(trgShape, np.nan)
+        return np.array([e if e is not None else nonePatch for e in lst])
 
 
 
