@@ -1,5 +1,7 @@
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
+import statannot
 
 import mesostat.utils.pandas_helper as pandas_helper
 
@@ -20,6 +22,23 @@ def barplot_labeled(ax, data, dataLabels, plotLabel=None, alpha=None, vlines=Non
     if hlines is not None:
         for hline in hlines:
             ax.axhline(y=hline, color='r', linestyle='--')
+
+
+def sns_barplot(ax, df, xLabel, yLabel, hLabel, annotHue=False):
+    sns.barplot(ax=ax, data=df, x=xLabel, y=yLabel, hue=hLabel)
+
+    if annotHue:
+        xSet = set(df[xLabel])
+        hSet = list(set(df[hLabel]))
+        assert len(hSet) == 2
+
+        boxPairs = []
+        for xL in xSet:
+            boxPairs += [((xL, hSet[0]),(xL, hSet[1]))]
+
+        statannot.add_stat_annotation(ax, plot='barplot', data=df, x=xLabel, y=yLabel, hue=hLabel,
+                                      box_pairs=boxPairs, test='t-test_ind', loc='inside', verbose=2,
+                                      line_offset_to_box=0)
 
 
 # Plot stacked barplot from pandas dataframe

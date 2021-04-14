@@ -2,6 +2,10 @@ import pandas as pd
 import itertools
 
 
+############################
+# Search
+############################
+
 def pd_is_one_row(rows):
     nRows = rows.shape[0]
     if nRows == 0:
@@ -24,7 +28,14 @@ def pd_rows_colval(df, colname, val):
 def pd_query(df, queryDict, dropQuery=False):
     if len(queryDict) == 0:
         return df
+    elif len(df) == 0:
+        return df
     else:
+        # If a non-existing column is requested, return empty
+        for k in queryDict.keys():
+            if k not in df.columns:
+                return pd.DataFrame(columns=df.columns)
+
         # Query likes strings to be wrapped in quotation marks for later evaluation
         strwrap = lambda val: '"' + val + '"' if isinstance(val, str) else str(val)
         query = ' and '.join([colname+'=='+strwrap(val) for colname, val in queryDict.items()])
@@ -45,6 +56,10 @@ def pd_row_exists(df, lst):
     return len(pd_query_exact(df, lst)) > 0
 
 
+##############################
+# Merging and Stacking
+##############################
+
 # Add new row to dataframe, unless such a row is already present
 def pd_append_row(df, lst, skip_repeat=False):
     if skip_repeat:
@@ -54,6 +69,7 @@ def pd_append_row(df, lst, skip_repeat=False):
     else:
         newRow = pd.DataFrame([lst], columns=df.columns)
         return df.append(newRow, ignore_index=True)
+
 
 # Appends all dataframes in a list
 # A new column is added with values unique to the rows of original dataframes
@@ -78,11 +94,21 @@ def pd_merge_equivalent_df(dfLst, splitColNames, dfNames):
     return dfRez
 
 
-# Get a dictionary where keys are column names and values are possible values for that column
-# Construct a dataframe where rows are all combinations of provided column values
-def outer_product_df(d):
-    rowsLst = list(itertools.product(*d.values()))
-    return pd.DataFrame(rowsLst, columns = list(d.keys()))
+def pd_merge_multiple(dfNamesLst, dfLst, categoricalCols):
+    for i in range(len(dfNamesLst)):
+        if i == 0:
+            dfJoint = dfLst[i].copy()
+        else:
+            suffixes = ('', '_' + dfNamesLst[i])
+            dfJoint = pd.merge(dfJoint, dfLst[i], how="inner", on=categoricalCols, suffixes=suffixes)
+
+    # Problem is that columns of the very first df will lack suffixes, so need to add them manually
+    extraCols = set(dfLst[0].columns) - set(categoricalCols)
+    for extraCol in extraCols:
+        dfJoint[extraCol + '_' + dfNamesLst[0]] = dfJoint[extraCol]
+        dfJoint.drop(extraCol, axis=1, inplace=True)
+
+    return dfJoint
 
 
 def merge_df_from_dict(dfDict, columnNames):
@@ -103,6 +129,21 @@ def merge_df_from_dict(dfDict, columnNames):
 
     return pd.concat(rezDFList, sort=False).reset_index(drop=True)
 
+
+##############################
+# Constructors
+##############################
+
+# Get a dictionary where keys are column names and values are possible values for that column
+# Construct a dataframe where rows are all combinations of provided column values
+def outer_product_df(d):
+    rowsLst = list(itertools.product(*d.values()))
+    return pd.DataFrame(rowsLst, columns = list(d.keys()))
+
+
+##############################
+# Manipulation
+##############################
 
 # Move some of the columns in front in that order, the rest stay in the same order at the end
 def pd_move_cols_front(df, colsMove):
@@ -133,3 +174,16 @@ def pd_category_to_column(df, catName, rezName):
         dfThis.rename(columns={rezName: catVal}, inplace=True)
         rez = rez.append(dfThis)
     return rez.reset_index()
+
+
+# Convert list of combinations of two categorical variables into 2D indexed dataframe
+def pd_pivot(df, xLabel, yLabel, valLabel, xVals=None, yVals=None):
+    # Construct 2D pivot
+    dfPivot = df.pivot(index=xLabel, columns=yLabel, values=valLabel)
+
+    # Change order of dimensions
+    xVals = xVals if xVals is not None else sorted(set(df[xLabel]))
+    yVals = yVals if yVals is not None else sorted(set(df[yLabel]))
+    print(xVals, yVals)
+
+    return dfPivot[yVals].loc[xVals]#.reindex(yVals)

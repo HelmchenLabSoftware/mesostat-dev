@@ -35,3 +35,27 @@ def str_extract_data(string, template, charL='<', charR='>'):
 
     # Return dictionary
     return {keys[i] : m.group(i+1) for i in range(len(keys))}
+
+
+def enum_nonunique(lst):
+    '''
+    Non-unique strings are added a suffix to make all elements unique. First element has no suffix.
+    Enumeration is deterministic. Enumeration follows position in list (earlier elements have lower suffix)
+
+    :param lst: List of strings
+    :return:    List of strings, same as input
+
+    Example:
+       >>> enum_nonunique(['A', 'B', 'A', 'C', 'A', 'B'])
+       ['A', 'B', 'A_1', 'C', 'A_2', 'B_1']
+    '''
+    d = {}
+    rez = []
+    for a in lst:
+        if a in d.keys():
+            d[a] += 1
+            rez += [a + '_' + str(d[a])]
+        else:
+            d[a] = 0
+            rez += [a]
+    return rez
