@@ -13,7 +13,7 @@ import mesostat.metric.pca as pca
 from mesostat.metric.idtxl_te import idtxl_single_target, idtxl_network
 from mesostat.metric.idtxl_pid import bivariate_pid_3D
 
-from mesostat.utils.sweep import SweepGenerator
+from mesostat.utils.iterators.sweep import SweepGenerator
 from mesostat.utils.parallel import GenericMapper
 
 '''

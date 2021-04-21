@@ -10,7 +10,7 @@ import mesostat.metric.stretch as stretch
 import mesostat.metric.pca as pca
 
 from mesostat.utils.arrays import set_list_shapes
-from mesostat.utils.sweep import SweepGeneratorNonUniform
+from mesostat.utils.iterators.sweep import SweepGeneratorNonUniform
 from mesostat.utils.parallel import GenericMapper
 
 '''
