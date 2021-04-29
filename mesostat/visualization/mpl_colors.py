@@ -1,8 +1,23 @@
 import numpy as np
 import colorsys
 from scipy import interpolate
-from matplotlib.colors import ListedColormap
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+
+
+def base_colors_rgb(key='base'):
+    if key == 'base':
+        colorDict = mcolors.BASE_COLORS
+    elif key == 'tableau':
+        colorDict = mcolors.TABLEAU_COLORS
+    elif key == 'css4':
+        colorDict = mcolors.CSS4_COLORS
+    elif key == 'xkcd':
+        colorDict = mcolors.CSS4_COLORS
+    else:
+        raise ValueError('Unknown color scheme')
+
+    return [mcolors.to_rgb(v) for c, v in colorDict.items()]
 
 
 def random_colors(num_colors):
@@ -35,7 +50,7 @@ def custom_grad_cmap(colorArr):
     vals[:, 0] = interpolate.interp1d(x0, colorArrEff[:, 0], kind='linear')(x)
     vals[:, 1] = interpolate.interp1d(x0, colorArrEff[:, 1], kind='linear')(x)
     vals[:, 2] = interpolate.interp1d(x0, colorArrEff[:, 2], kind='linear')(x)
-    return ListedColormap(vals)
+    return mcolors.ListedColormap(vals)
 
 
 def sample_cmap(cmap, arr, vmin=None, vmax=None):

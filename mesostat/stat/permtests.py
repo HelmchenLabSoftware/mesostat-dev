@@ -9,23 +9,6 @@ TODO:
 '''
 
 
-
-# def percentile_twosided(fTrue, fTestArr, settings=None):
-#     nSample = fTestArr.shape[0]
-#     pvalL = np.max([np.mean(fTestArr <= fTrue), 1/nSample])
-#     pvalR = np.max([np.mean(fTestArr >= fTrue), 1/nSample])
-#
-#     output = [pvalL, pvalR]
-#     if settings is not None:
-#         if "haveEffectSize" in settings and settings["haveEffectSize"]:
-#             effSize = (fTrue - np.mean(fTestArr)) / np.std(fTestArr)
-#             output += [effSize]
-#         if "haveMeans" in settings and settings["haveMeans"]:
-#             output += [fTrue, np.mean(fTestArr)]
-#
-#     return output
-
-
 # Evaluate in which percentile of the test data does the true value lay
 # If function is multivariate, independent test is performed on each variable
 # pvalL - probability of getting a random value at least as small as true
