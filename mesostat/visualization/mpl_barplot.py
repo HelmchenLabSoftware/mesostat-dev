@@ -6,7 +6,7 @@ import statannot
 import mesostat.utils.pandas_helper as pandas_helper
 
 
-def barplot_labeled(ax, data, dataLabels, plotLabel=None, alpha=None, vlines=None, hlines=None):
+def barplot_labeled(ax, data, dataLabels, plotLabel=None, alpha=None, vlines=None, hlines=None, rotation=None):
     dataEff = data if data.ndim == 2 else data[:, None]
     nDim, nData = dataEff.shape
     x = np.arange(nDim)
@@ -22,6 +22,12 @@ def barplot_labeled(ax, data, dataLabels, plotLabel=None, alpha=None, vlines=Non
     if hlines is not None:
         for hline in hlines:
             ax.axhline(y=hline, color='r', linestyle='--')
+
+    if rotation is not None:
+        for label in ax.get_xticklabels():
+            label.set_rotation(90)
+
+
 
 
 def sns_barplot(ax, df, xLabel, yLabel, hLabel, annotHue=False):

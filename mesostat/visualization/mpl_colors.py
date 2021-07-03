@@ -53,22 +53,30 @@ def custom_grad_cmap(colorArr):
     return mcolors.ListedColormap(vals)
 
 
-def sample_cmap(cmap, arr, vmin=None, vmax=None):
+def sample_cmap(cmap, arr, vmin=None, vmax=None, dropAlpha=False):
     arrTmp = np.array(arr)
 
     # Test if samples in correct range
     if vmin is None:
         vmin = np.min(arrTmp)
-    else:
-        assert np.min(arrTmp) >= vmin
 
     if vmax is None:
         vmax = np.max(arrTmp)
-    else:
-        assert np.max(arrTmp) <= vmax
 
     arrNorm = (arrTmp - vmin) / (vmax - vmin)
     arrNorm = np.clip(arrNorm, 0, 1)
 
     cmapFunc = plt.get_cmap(cmap)
-    return [cmapFunc(elNorm) for elNorm in arrNorm]
+    rez = [cmapFunc(elNorm) for elNorm in arrNorm]
+    if not dropAlpha:
+        return rez
+    else:
+        return [r[:3] for r in rez]
+
+
+def rgb_change_color(img, c1, c2):
+    rez = img.copy()
+    r,g,b = img.T
+    white_areas = (r == c1[0]) & (b == c1[1]) & (g == c1[2])
+    rez[white_areas.T] = c2
+    return rez

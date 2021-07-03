@@ -1,6 +1,9 @@
 import numpy as np
 
+from sklearn import svm
+from sklearn.metrics import accuracy_score
 from scipy.stats import mannwhitneyu, wilcoxon, binom
+
 rstest_twosided = lambda x, y : mannwhitneyu(x, y, alternative='two-sided')
 
 
@@ -68,3 +71,29 @@ def wilcoxon_nan_aware(data1, data2):
         logPval = -np.log10(wilcoxon(data1nonan, data2nonan)[1])
     nNoNan = np.sum(~nanIdx)
     return logPval, [nNoNan, nNoNan]
+
+
+def classification_accuracy_weighted(a, b):
+    '''
+    Computes best accuracy of classifying between scalar variables using a separating line
+    Compensates for disbalances in samples - aims to recover separability of equal classes
+
+    :param a: 1D numpy array of floats
+    :param b: 1D numpy array of floats
+    :return: scalar measure of accuracy in percent
+    '''
+
+    aEff = a[~np.isnan(a)]
+    bEff = b[~np.isnan(b)]
+
+    Na = len(aEff)
+    Nb = len(bEff)
+    assert (Na > 0) and (Nb > 0)
+
+    x = np.hstack([aEff, bEff])[:, None]
+    y = [0] * Na + [1] * Nb
+    w = [Nb] * Na + [Na] * Nb
+    clf = svm.SVC()
+    clf.fit(x, y, sample_weight=w)
+    yHat = clf.predict(x)
+    return accuracy_score(y, yHat)
