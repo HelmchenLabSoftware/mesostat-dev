@@ -36,9 +36,9 @@ def sns_barplot(ax, df, xLabel, yLabel, hLabel, annotHue=False):
         for xL in xSet:
             boxPairs += [((xL, hSet[0]),(xL, hSet[1]))]
 
-        statannot.add_stat_annotation(ax, plot='barplot', data=df, x=xLabel, y=yLabel, hue=hLabel,
-                                      box_pairs=boxPairs, test='t-test_ind', loc='inside', verbose=2,
-                                      line_offset_to_box=0)
+        # statannot.add_stat_annotation(ax, plot='barplot', data=df, x=xLabel, y=yLabel, hue=hLabel,
+        #                               box_pairs=boxPairs, test='t-test_ind', loc='inside', verbose=2,
+        #                               line_offset_to_box=0)
 
 
 # Plot stacked barplot from pandas dataframe

@@ -129,6 +129,16 @@ def merge_df_from_dict(dfDict, columnNames):
 
     return pd.concat(rezDFList, sort=False).reset_index(drop=True)
 
+##############################
+# Delete
+##############################
+
+def drop_rows_byquery(df, queryLst):
+    dfRez = df.copy()
+    for queryDict in queryLst:
+        rows = pd_query(df, queryDict)
+        dfRez = dfRez.drop(index=rows.index)
+    return dfRez
 
 ##############################
 # Constructors
@@ -139,7 +149,6 @@ def merge_df_from_dict(dfDict, columnNames):
 def outer_product_df(d):
     rowsLst = list(itertools.product(*d.values()))
     return pd.DataFrame(rowsLst, columns = list(d.keys()))
-
 
 ##############################
 # Manipulation
