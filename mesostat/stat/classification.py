@@ -83,7 +83,8 @@ def balance_oversample(x, y, classes):
     return xNew, yNew
 
 
-def confusion_matrix(y1, y2, labels):
+def confusion_matrix(y1, y2, labels=None):
+    labels = labels if labels is not None else sorted(list(set(y1) | set(y2)))
     nLabels = len(labels)
     rez = np.zeros((nLabels, nLabels), dtype=int)
     for i, label1 in enumerate(labels):

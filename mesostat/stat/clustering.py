@@ -1,29 +1,24 @@
 import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
-from sklearn.cluster import AffinityPropagation, SpectralClustering, OPTICS
+from sklearn.cluster import AffinityPropagation, SpectralClustering, OPTICS, AgglomerativeClustering
 
 from mesostat.visualization.mpl_matrix import imshow
 from mesostat.stat.connectomics import offdiag_1D
 
 
-# Compute clustering given distance matrix and distance threshold
-def cluster_dist_matrix(M, t, method='hierarchic'):
-    if method == 'hierarchic':
-        distTril = np.tril(M, 1)
-        linkageMatrix = linkage(distTril, method='centroid', metric='euclidean', optimal_ordering=True)
-        return fcluster(linkageMatrix, t, criterion='maxclust')  # - 1  # Original numbering starts at 1 for some reason
-    #         linkageMatrix = linkage(distTril, method='centroid', metric='euclidean')
-    #         rez = fcluster(linkageMatrix, t, criterion='distance')
-    elif method == 'affinity':
-        # clustering = AffinityPropagation(affinity='precomputed', preference=t).fit(M)  #damping=t
-        clustering = AffinityPropagation(affinity='euclidean', preference=t).fit(M)  # damping=t
-        rez = clustering.labels_
-    elif method == 'spectral':
-        clustering = SpectralClustering(affinity='precomputed', assign_labels="discretize", n_init=100).fit(M)
-        rez = clustering.labels_
-    elif method == 'optics':
-        clustering = OPTICS(metric='precomputed', min_samples=t).fit(M)
-        rez = clustering.labels_
+def cluster_dist_matrix_min(M, t, method='Agglomerative'):
+    '''
+    :param M:      Distance matrix
+    :param t:      Parameter for the clustering algorithm
+    :param method: Clustering algorithm
+    :return:       Cluster labels for each point
+
+    Below algorithms minimize distance between points within the cluster
+    '''
+    if method == 'Agglomerative':
+        rez = AgglomerativeClustering(affinity='precomputed', n_clusters=t, linkage='single').fit(M).labels_
+    elif method == 'OPTICS':
+        rez = OPTICS(metric='precomputed', xi=t).fit(M).labels_
     else:
         raise ValueError("Unknown method", method)
 
@@ -32,14 +27,46 @@ def cluster_dist_matrix(M, t, method='hierarchic'):
     return rez - np.min(rez).astype(int)
 
 
-def cluster_plot(fig, ax, M, clusters, channelLabels=None):
+def cluster_dist_matrix_max(M, t, method='Affinity'):
+    '''
+    :param M:      Distance matrix
+    :param t:      Parameter for the clustering algorithm
+    :param method: Clustering algorithm
+    :return:       Cluster labels for each point
+
+    Below algorithms maximize distance between points within the cluster
+    '''
+    if method == 'Affinity':
+        rez = AffinityPropagation(affinity='precomputed', damping=0.5).fit(M).labels_
+    else:
+        raise ValueError("Unknown method", method)
+
+    # Original numbering may start at something other than 0 for some methods
+    rez = np.array(rez, dtype=int)
+    return rez - np.min(rez).astype(int)
+
+
+def cluster_plot(fig, ax, M, clusters, channelLabels=None, limits=None, cmap='jet'):
+    '''
+    :param fig:            Matplotlib figure
+    :param ax:             Matplotlib axis
+    :param M:              Distance matrix
+    :param clusters:       Cluster labels
+    :param channelLabels:  Channel labels
+    :param limits:         Limits for the distance matrix plot
+    :param cmap:           Color map
+    :return:
+
+    Plot distance matrix heatmap sorted by cluster. Plot separating lines for clusters
+    '''
+
     idxs = np.argsort(clusters)
     MSort = M[idxs][:, idxs]
 
     idCluster, nCluster = np.unique(clusters, return_counts=True)
     nClustCum = np.cumsum(nCluster)
 
-    imshow(fig, ax, MSort, 'clustering', limits=[-1,1], haveColorBar=True, cmap='jet')
+    imshow(fig, ax, MSort, 'clustering', limits=limits, haveColorBar=True, cmap=cmap)
 
     for nLine in nClustCum:
         ax.axvline(x=nLine - 0.5, linestyle='--', color='black', alpha=0.3)
@@ -53,6 +80,15 @@ def cluster_plot(fig, ax, M, clusters, channelLabels=None):
 
 
 def cluster_values(M, clusters):
+    '''
+    :param M:          Distance matrix
+    :param clusters:   Cluster labels
+    :return:           Dictionary of metrics of cluster fidelity. Each metric computed for each cluster
+
+    avgCorr - average in-cluster distance
+    avgRelCorr - average in-cluster distance minus out-cluster distance
+    '''
+
     rez = {'avgCorr' : {}, 'avgRelCorr' : {}}
 
     for iClust in sorted(set(clusters)):
