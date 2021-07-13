@@ -73,7 +73,7 @@ def multivariate_pid_key(dim):
         raise ValueError('Unexpected dimension', dim)
 
 
-#@redirect_stdout
+@redirect_stdout
 def bivariate_pid_3D(data, settings):
     src, trg = _parse_channels(settings, dim=3)
     dataEff = _shuffle_target(data, trg, settings)
