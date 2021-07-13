@@ -26,7 +26,7 @@ def bin_data(data, nBins, axis=0):
         rezLst += [dataBinned.reshape(dataThis.shape)]
 
     # Move the binned dimension back to where it was originally
-    return numpy_move_dimension(np.array(rezLst), 0, axis)
+    return numpy_move_dimension(np.array(rezLst, dtype=int), 0, axis)
 
 
 # Downsample uniformly-spaced points by grouping them together and taking averages
@@ -73,6 +73,13 @@ def resample_kernel(x1, x2, sig2=None):
         W[i] /= np.sum(W[i])
 
     return W
+
+
+# Construct resampling kernel for special case where same interval is spanned but with different frequency
+def resample_kernel_same_interv(n1, n2, sig2=None):
+    x1 = np.linspace(0, 1, n1)
+    x2 = np.linspace(0, 1, n2)
+    return resample_kernel(x1, x2, sig2=sig2)
 
 
 # General resampling

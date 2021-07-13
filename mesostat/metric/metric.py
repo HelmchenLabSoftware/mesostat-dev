@@ -11,7 +11,7 @@ import mesostat.metric.moment as moment
 import mesostat.metric.sequence as sequence
 import mesostat.metric.pca as pca
 from mesostat.metric.idtxl_te import idtxl_single_target, idtxl_network
-from mesostat.metric.idtxl_pid import bivariate_pid_3D
+import mesostat.metric.idtxl_pid as pid
 
 from mesostat.utils.iterators.sweep import SweepGenerator
 from mesostat.utils.parallel import GenericMapper
@@ -72,7 +72,9 @@ class MetricCalculator:
             "BivariateTE":          lambda data, settings: self._TE("BivariateTE", data, settings),
             "MultivariateMI":       lambda data, settings: self._TE("MultivariateMI", data, settings),
             "MultivariateTE":       lambda data, settings: self._TE("MultivariateTE", data, settings),
-            "BivariatePID":         bivariate_pid_3D,
+            "BivariatePID3D":       pid.bivariate_pid_3D,
+            "MultivariatePID3D":    pid.multivariate_pid_3D,
+            "MultivariatePID4D":    pid.multivariate_pid_4D,
 
             # TEMPORAL METRICS
             "autocorr":             autocorr_3D,

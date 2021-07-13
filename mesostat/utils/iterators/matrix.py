@@ -1,5 +1,9 @@
 
 
+def sample_list(lst, iter_):
+    return [[lst[i] for i in it] for it in iter_]
+
+
 # Return a list of all pairs of elements in a list, excluding flips.
 def iter_g_2D(n):
     assert n >= 2

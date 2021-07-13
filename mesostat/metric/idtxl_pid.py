@@ -14,7 +14,19 @@ def _parse_channels(settings, dim):
     else:
         src = settings['src']
         trg = settings['trg']
-    return src, int(trg)
+    return [int(s) for s in src], int(trg)
+
+
+def _shuffle_target(dataRPS, trg, settings):
+    if 'shuffle' in settings and settings['shuffle']:
+        dataEff = np.copy(dataRPS)
+        dataTrg2D = dataEff[:, trg]
+        dataTrg1D = dataTrg2D.flatten()
+        np.random.shuffle(dataTrg1D)
+        dataEff[:, trg] = dataTrg1D.reshape(dataTrg2D.shape)
+        return dataEff
+    else:
+        return dataRPS
 
 
 def bivariate_pid_key():
@@ -61,34 +73,48 @@ def multivariate_pid_key(dim):
         raise ValueError('Unexpected dimension', dim)
 
 
-@redirect_stdout
+#@redirect_stdout
 def bivariate_pid_3D(data, settings):
-    dataIDTxl = Data(data, dim_order='rps', normalise=False)
+    src, trg = _parse_channels(settings, dim=3)
+    dataEff = _shuffle_target(data, trg, settings)
+
+    dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = BivariatePID()
 
-    src, trg = _parse_channels(settings, dim=3)
     rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
 
     return np.array([rez.get_single_target(trg)[k] for k in bivariate_pid_key()])
 
 
-@redirect_stdout
+#@redirect_stdout
 def multivariate_pid_3D(data, settings):
-    dataIDTxl = Data(data, dim_order='rps')
+    src, trg = _parse_channels(settings, dim=3)
+    dataEff = _shuffle_target(data, trg, settings)
+
+    dataIDTxl = Data(dataEff, dim_order='rps')
     pid = MultivariatePID()
 
-    src, trg = _parse_channels(settings, dim=3)
     rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
 
     return np.array([rez.get_single_target(trg)[k] for k in multivariate_pid_key(dim=3)])
 
 
-@redirect_stdout
+#@redirect_stdout
 def multivariate_pid_4D(data, settings):
-    dataIDTxl = Data(data, dim_order='rps')
+    src, trg = _parse_channels(settings, dim=4)
+    dataEff = _shuffle_target(data, trg, settings)
+
+    # np.save('test.npy', dataEff)
+
+    # print(settings)
+    # print("Check1", dataEff.shape, dataEff.dtype, src, trg)
+    # print('Check2', issubclass(dataEff.dtype.type, np.integer))
+    # print('Check3', [issubclass(dataEff[:, i].dtype.type, np.integer) for i in src])
+    # print('Check4', issubclass(dataEff[:, trg].dtype.type, np.integer))
+
+    dataIDTxl = Data(dataEff, dim_order='rps')
     pid = MultivariatePID()
 
-    src, trg = _parse_channels(settings, dim=4)
     rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
 
     return np.array([rez.get_single_target(trg)[k] for k in multivariate_pid_key(dim=4)])

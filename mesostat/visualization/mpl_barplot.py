@@ -28,10 +28,11 @@ def barplot_labeled(ax, data, dataLabels, plotLabel=None, alpha=None, vlines=Non
             label.set_rotation(90)
 
 
+def sns_barplot(ax, df, xLabel, yLabel, hLabel, annotHue=False, xOrd=None, hOrd=None):
+    xOrdEff = None if xOrd is None else [x for x in xOrd if x in set(df[xLabel])]
+    hOrdEff = None if hOrd is None else [h for h in hOrd if h in set(df[hLabel])]
 
-
-def sns_barplot(ax, df, xLabel, yLabel, hLabel, annotHue=False):
-    sns.barplot(ax=ax, data=df, x=xLabel, y=yLabel, hue=hLabel)
+    sns.barplot(ax=ax, data=df, x=xLabel, y=yLabel, hue=hLabel, order=xOrdEff, hue_order=hOrdEff)
 
     if annotHue:
         xSet = set(df[xLabel])
