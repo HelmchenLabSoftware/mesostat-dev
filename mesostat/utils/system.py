@@ -48,11 +48,17 @@ def progress_bar(i, imax, suffix=None):
 
 # Find all folders in this folder (excluding subdirectories)
 def get_subfolders(folderpath):
+    if not os.path.isdir(folderpath):
+        raise NotADirectoryError('Path', folderpath, 'does not exist')
+
     return [_dir for _dir in os.listdir(folderpath) if os.path.isdir(os.path.join(folderpath, _dir))]
 
 
 # Find all finles in this folder (excluding subdirectories)
 def getfiles(inputpath, keys):
+    if not os.path.isdir(inputpath):
+        raise NotADirectoryError('Path', inputpath, 'does not exist')
+
     rez = []
     for fname in  os.listdir(inputpath):
         if os.path.isfile(os.path.join(inputpath, fname)):
@@ -64,6 +70,9 @@ def getfiles(inputpath, keys):
 # Find all files in a given directory including subdirectories
 # All keys must appear in file name
 def getfiles_walk(inputpath, keys):
+    if not os.path.isdir(inputpath):
+        raise NotADirectoryError('Path', inputpath, 'does not exist')
+
     rez = []
     for dirpath, dirnames, filenames in os.walk(inputpath):
         for filename in filenames:

@@ -91,12 +91,12 @@ def multivariate_pid_3D(data, settings):
     src, trg = _parse_channels(settings, dim=3)
     dataEff = _shuffle_target(data, trg, settings)
 
-    dataIDTxl = Data(dataEff, dim_order='rps')
+    dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = MultivariatePID()
 
     rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
 
-    return np.array([rez.get_single_target(trg)[k] for k in multivariate_pid_key(dim=3)])
+    return np.array([rez.get_single_target(trg)['avg'][k][2] for k in multivariate_pid_key(dim=3)])
 
 
 #@redirect_stdout
@@ -112,9 +112,9 @@ def multivariate_pid_4D(data, settings):
     # print('Check3', [issubclass(dataEff[:, i].dtype.type, np.integer) for i in src])
     # print('Check4', issubclass(dataEff[:, trg].dtype.type, np.integer))
 
-    dataIDTxl = Data(dataEff, dim_order='rps')
+    dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = MultivariatePID()
 
     rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
 
-    return np.array([rez.get_single_target(trg)[k] for k in multivariate_pid_key(dim=4)])
+    return np.array([rez.get_single_target(trg)['avg'][k][2] for k in multivariate_pid_key(dim=4)])
