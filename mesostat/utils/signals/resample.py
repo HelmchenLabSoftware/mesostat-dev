@@ -23,6 +23,9 @@ def bin_data(data, nBins, axis=0):
         dataThis = np.take(data, iAx, axis=axis)
         dataFlat = dataThis.flatten()
         dataBinned = bin_data_1D(dataFlat, nBins)
+
+        print('aaa', dataThis.shape, dataBinned.shape)
+
         rezLst += [dataBinned.reshape(dataThis.shape)]
 
     # Move the binned dimension back to where it was originally
