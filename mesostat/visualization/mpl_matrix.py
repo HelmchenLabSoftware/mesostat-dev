@@ -5,14 +5,14 @@ import mesostat.visualization.mpl_colorbar as mpl_colorbar
 
 
 def imshow(fig, ax, data, xlabel=None, ylabel=None, title=None, haveColorBar=False, limits=None, extent=None,
-           xTicks=None, yTicks=None, haveTicks=False, cmap=None, aspect='auto'):
+           xTicks=None, yTicks=None, haveTicks=False, cmap=None, aspect='auto', fontsize=20):
     img = ax.imshow(data, cmap=cmap, extent=extent, aspect=aspect)
     if xlabel is not None:
-        ax.set_xlabel(xlabel)
+        ax.set_xlabel(xlabel, fontsize=fontsize)
     if ylabel is not None:
-        ax.set_ylabel(ylabel)
+        ax.set_ylabel(ylabel, fontsize=fontsize)
     if title is not None:
-        ax.set_title(title)
+        ax.set_title(title, fontsize=fontsize)
     if haveColorBar:
         mpl_colorbar.imshow_add_color_bar(fig, ax, img)
     if not haveTicks:

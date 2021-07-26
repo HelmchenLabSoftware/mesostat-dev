@@ -37,6 +37,7 @@ TODO:
         * In sweep unpack, transpose result to bring processes back to expected position 
 '''
 
+
 class MetricCalculator:
     def __init__(self, serial=False, verbose=True, nCore=None):
         # Initialize parallel mapper once

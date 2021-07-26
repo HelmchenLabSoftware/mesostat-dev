@@ -69,10 +69,10 @@ def barplot_stacked(ax, df, xKey, yKey):
     ax.legend()
 
 
-def barplot_stacked_indexed(ax, yDict, xTickLabels=None, title=None, xLabel=None, yLabel=None, iMax=None, rotation=45):
+def barplot_stacked_indexed(ax, yDict, xTickLabels=None, title=None, xLabel=None, yLabel=None, iMax=None,
+                            rotation=45, fontsize=20):
     bottom = np.zeros(len(next(iter(yDict.values()))))
     bottom = bottom if iMax is None else bottom[:iMax]
-
 
     for yName, yVal in yDict.items():
         yValEff = yVal if iMax is None else yVal[:iMax]
@@ -83,13 +83,11 @@ def barplot_stacked_indexed(ax, yDict, xTickLabels=None, title=None, xLabel=None
 
     ax.legend()
     if xLabel is not None:
-        ax.set_xlabel(xLabel)
+        ax.set_xlabel(xLabel, fontsize=fontsize)
     if yLabel is not None:
-        ax.set_ylabel(yLabel)
-    if yLabel is not None:
-        ax.set_ylabel(yLabel)
+        ax.set_ylabel(yLabel, fontsize=fontsize)
     if title is not None:
-        ax.set_title(title)
+        ax.set_title(title, fontsize=fontsize)
     if xTickLabels is not None:
         xTickEff = xTickLabels if iMax is None else xTickLabels[:iMax]
         ax.set_xticks(np.arange(len(xTickEff)))

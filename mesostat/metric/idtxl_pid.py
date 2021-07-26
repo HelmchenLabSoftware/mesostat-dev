@@ -6,7 +6,7 @@ from idtxl.data import Data
 from mesostat.utils.decorators import redirect_stdout
 
 
-def _parse_channels(settings, dim):
+def _parse_channels(settings: dict, dim: int):
     if 'channels' in settings.keys():
         assert len(settings['channels']) == dim
         src = settings['channels'][:-1]
@@ -17,7 +17,7 @@ def _parse_channels(settings, dim):
     return [int(s) for s in src], int(trg)
 
 
-def _shuffle_target(dataRPS, trg, settings):
+def _shuffle_target(dataRPS: np.array, trg: int, settings: dict):
     if 'shuffle' in settings and settings['shuffle']:
         dataEff = np.copy(dataRPS)
         dataTrg2D = dataEff[:, trg]
@@ -40,7 +40,7 @@ def bivariate_pid_key():
 
 # Stacking output into numpy array for efficiency
 # Making sure that output always has the same order
-def multivariate_pid_key(dim):
+def multivariate_pid_key(dim: int):
     if dim == 3:
         return [
             ((1,),),            # Unq1
@@ -74,7 +74,7 @@ def multivariate_pid_key(dim):
 
 
 @redirect_stdout
-def bivariate_pid_3D(data, settings):
+def bivariate_pid_3D(data: np.array, settings: dict):
     src, trg = _parse_channels(settings, dim=3)
     dataEff = _shuffle_target(data, trg, settings)
 
@@ -86,8 +86,8 @@ def bivariate_pid_3D(data, settings):
     return np.array([rez.get_single_target(trg)[k] for k in bivariate_pid_key()])
 
 
-#@redirect_stdout
-def multivariate_pid_3D(data, settings):
+@redirect_stdout
+def multivariate_pid_3D(data: np.array, settings: dict):
     src, trg = _parse_channels(settings, dim=3)
     dataEff = _shuffle_target(data, trg, settings)
 
@@ -99,18 +99,10 @@ def multivariate_pid_3D(data, settings):
     return np.array([rez.get_single_target(trg)['avg'][k][2] for k in multivariate_pid_key(dim=3)])
 
 
-#@redirect_stdout
-def multivariate_pid_4D(data, settings):
+@redirect_stdout
+def multivariate_pid_4D(data: np.array, settings: dict):
     src, trg = _parse_channels(settings, dim=4)
     dataEff = _shuffle_target(data, trg, settings)
-
-    # np.save('test.npy', dataEff)
-
-    # print(settings)
-    # print("Check1", dataEff.shape, dataEff.dtype, src, trg)
-    # print('Check2', issubclass(dataEff.dtype.type, np.integer))
-    # print('Check3', [issubclass(dataEff[:, i].dtype.type, np.integer) for i in src])
-    # print('Check4', issubclass(dataEff[:, trg].dtype.type, np.integer))
 
     dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = MultivariatePID()

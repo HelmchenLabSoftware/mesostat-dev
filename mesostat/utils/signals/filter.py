@@ -23,9 +23,9 @@ def zscore_dim_ord(x, dimOrdSrc, dimOrdZ=None):
 
 # ZScore list of arrays, computing mean and std from concatenated data
 def zscore_list(lst):
-    xFlat = np.hstack([data.flatten for data in lst])
+    xFlat = np.hstack([data.flatten() for data in lst])
     mu = np.nanmean(xFlat)
-    std = np.nanstd(mu)
+    std = np.nanstd(xFlat)
     return [(data - mu)/std for data in lst]
 
 

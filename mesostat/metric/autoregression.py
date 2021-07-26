@@ -11,14 +11,13 @@ from mesostat.stat.machinelearning import split_train_test, drop_nan_rows
 # FIXME: Decide if we need to ZSCORE at all or not for this metric. If yes, make MAR and AR consistent
 
 
-
-def _preprocess_ar(data, settings):
+def _preprocess_ar(data: np.array, settings: dict):
     # Flatten processes and repetitions, zscore
     dataFlat = numpy_merge_dimensions(data, 0, 2)
     return zscore(dataFlat)
 
 
-def _preprocess_ar_non_uniform(dataLst, settings):
+def _preprocess_ar_non_uniform(dataLst: list, settings: dict):
     # Flatten processes and repetitions
     rez = []
     for data2D in dataLst:
@@ -28,13 +27,12 @@ def _preprocess_ar_non_uniform(dataLst, settings):
     return zscore_list(rez)
 
 
-
 # TODO: Unstack Y in order to separate time and trial dimensions
-# def mar_unstack_result(y, nTrial):
+# def mar_unstack_result(y:np.array, nTrial: int):
 #     nTimeTrialReduced, nChannel = y.shape
 
 
-def _ar_2D_alpha(x, y):
+def _ar_2D_alpha(x: np.array, y: np.array):
     if len(x) < 10:
         raise ValueError("Number of samples", len(x), "too small for autoregression")
 
@@ -42,7 +40,7 @@ def _ar_2D_alpha(x, y):
 
 
 # TODO: Perform exhaustive cross-validation
-def _ar_2D_testerr(x, y, testFrac):
+def _ar_2D_testerr(x: np.array, y: np.array, testFrac):
     xTrain, yTrain, xTest, yTest = split_train_test([x, y], testFrac)
     alpha = ar.fit(xTrain, yTrain)
 
@@ -56,14 +54,14 @@ def _ar_2D_testerr(x, y, testFrac):
     return ar.rel_err(yTest, yHatTest)
 
 
-def _mar3D_alpha(x, y):
+def _mar3D_alpha(x: np.array, y: np.array):
     if len(x) < 10:
         raise ValueError("Number of samples", len(x), "too small for autoregression")
 
     return mar.fit_mle(x, y)  # Note this is an array
 
 
-def _mar3D_testerr(x, y, testFrac):
+def _mar3D_testerr(x: np.array, y: np.array, testFrac):
     xTrain, yTrain, xTest, yTest = split_train_test([x, y], testFrac)
     alpha = mar.fit_mle(xTrain, yTrain)  # Note this is an array
 
@@ -77,7 +75,7 @@ def _mar3D_testerr(x, y, testFrac):
     return mar.rel_err(yTest, yHatTest)
 
 
-def _preprocess_mar_inp(data, inp, nHist):
+def _preprocess_mar_inp(data: np.array, inp: np.array, nHist:int):
     x, y = splitter.split3D(data, nHist)
 
     assert inp.ndim == 3, "Input matrix must be a 3D matrix"
@@ -95,9 +93,8 @@ def _preprocess_mar_inp(data, inp, nHist):
     return drop_nan_rows([x, y, u])
 
 
-def _preprocess_mar_inp_non_uniform(dataLst, inpLst, nHist):
+def _preprocess_mar_inp_non_uniform(dataLst: list, inpLst: list, nHist: int):
     x, y = splitter.split3D_non_uniform(dataLst, nHist)
-
 
     assert len(dataLst) == len(inpLst), "Input must have same number of trials as data"
     for data, inp in zip(dataLst, inpLst):
@@ -115,7 +112,7 @@ def _preprocess_mar_inp_non_uniform(dataLst, inpLst, nHist):
     return drop_nan_rows([x, y, u])
 
 
-def _mar3D_inp_testerr(x, y, u, testFrac):
+def _mar3D_inp_testerr(x: np.array, y: np.array, u: np.array, testFrac):
     xTrain, yTrain, uTrain, xTest, yTest, uTest = split_train_test([x, y, u], testFrac)
     alpha, beta = mar_inp.fit_mle(xTrain, yTrain, uTrain)  # Note this is an array
 
@@ -136,14 +133,14 @@ def _mar3D_inp_testerr(x, y, u, testFrac):
 
 
 # Compute the coefficient of the AR(1) process
-def ar1_coeff(data, settings):
+def ar1_coeff(data: np.array, settings: dict):
     data2D = _preprocess_ar(data, settings)
     x, y = drop_nan_rows(splitter.split2D(data2D, 1))
     return _ar_2D_alpha(x, y)
 
 
 # Compute the relative fitness error of the AR(1) process
-def ar1_testerr(data, settings):
+def ar1_testerr(data: np.array, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
     data2D = _preprocess_ar(data, settings)
     x, y = drop_nan_rows(splitter.split2D(data2D, 1))
@@ -151,20 +148,20 @@ def ar1_testerr(data, settings):
 
 
 # Compute the relative fitness error of the AR(1) process
-def mar1_coeff(data, settings):
+def mar1_coeff(data: np.array, settings: dict):
     x, y = drop_nan_rows(splitter.split3D(data, 1))
     return _mar3D_alpha(x, y)
 
 
 # Compute the relative fitness error of the AR(1) process
-def mar1_testerr(data, settings):
+def mar1_testerr(data: np.array, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
     x, y = drop_nan_rows(splitter.split3D(data, 1))
     return _mar3D_testerr(x, y, testFrac)
 
 
 # Compute the relative fitness error of the AR(n) process for a few small n values
-def ar_testerr(data, settings):
+def ar_testerr(data: np.array, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     data2D = _preprocess_ar(data, settings)
@@ -173,7 +170,7 @@ def ar_testerr(data, settings):
 
 
 # Compute the relative fitness error of the MAR(n) process for a few small n values
-def mar_testerr(data, settings):
+def mar_testerr(data: np.array, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     x, y = drop_nan_rows(splitter.split3D(data, settings['hist']))
@@ -181,7 +178,7 @@ def mar_testerr(data, settings):
 
 
 # Compute the relative fitness error of the MAR_INP(n) process for a few small n values
-def mar_inp_testerr(data, settings):
+def mar_inp_testerr(data: np.array, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     x, y, u = _preprocess_mar_inp(data, settings['inp'], settings['hist'])
@@ -193,14 +190,14 @@ def mar_inp_testerr(data, settings):
 ################################################
 
 # Compute the coefficient of the AR(1) process
-def ar1_coeff_non_uniform(dataLst3D, settings):
+def ar1_coeff_non_uniform(dataLst3D: list, settings: dict):
     dataLst2D = _preprocess_ar_non_uniform(dataLst3D, settings)
     x, y = drop_nan_rows(splitter.split2D_non_unifrom(dataLst2D, 1))
     return _ar_2D_alpha(x, y)
 
 
 # Compute the relative fitness error of the AR(1) process
-def ar1_testerr_non_uniform(dataLst3D, settings):
+def ar1_testerr_non_uniform(dataLst3D: list, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
     dataLst2D = _preprocess_ar_non_uniform(dataLst3D, settings)
     x, y = drop_nan_rows(splitter.split2D_non_unifrom(dataLst2D, 1))
@@ -208,20 +205,20 @@ def ar1_testerr_non_uniform(dataLst3D, settings):
 
 
 # Compute the relative fitness error of the AR(1) process
-def mar1_coeff_non_uniform(dataLst, settings):
+def mar1_coeff_non_uniform(dataLst: list, settings: dict):
     x, y = drop_nan_rows(splitter.split3D_non_uniform(dataLst, 1))
     return _mar3D_alpha(x, y)
 
 
 # Compute the relative fitness error of the AR(1) process
-def mar1_testerr_non_uniform(dataLst, settings):
+def mar1_testerr_non_uniform(dataLst: list, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
     x, y = drop_nan_rows(splitter.split3D_non_uniform(dataLst, 1))
     return _mar3D_testerr(x, y, testFrac)
 
 
 # Compute the relative fitness error of the AR(n) process for a few small n values
-def ar_testerr_non_uniform(dataLst, settings):
+def ar_testerr_non_uniform(dataLst: list, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     dataLst2D = _preprocess_ar_non_uniform(dataLst, settings)
@@ -230,7 +227,7 @@ def ar_testerr_non_uniform(dataLst, settings):
 
 
 # Compute the relative fitness error of the MAR(n) process for a few small n values
-def mar_testerr_non_uniform(dataLst, settings):
+def mar_testerr_non_uniform(dataLst: list, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     x, y = drop_nan_rows(splitter.split3D_non_uniform(dataLst, settings['hist']))
@@ -238,7 +235,7 @@ def mar_testerr_non_uniform(dataLst, settings):
 
 
 # Compute the relative fitness error of the MAR_INP(n) process for a few small n values
-def mar_inp_testerr_non_uniform(dataLst, settings):
+def mar_inp_testerr_non_uniform(dataLst: list, settings: dict):
     testFrac = settings['testfrac'] if 'testfrac' in settings.keys() else 0.1
 
     x, y, u = _preprocess_mar_inp_non_uniform(dataLst, settings['inp'], settings['hist'])

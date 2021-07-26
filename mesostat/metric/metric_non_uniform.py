@@ -2,7 +2,7 @@ import numpy as np
 
 from mesostat.stat.stat import mu_std
 import mesostat.metric.corr as corr
-from mesostat.metric.autocorr import autocorr_trunc_1D, autocorr_d1_3D_non_uniform
+from mesostat.metric.autocorr import autocorr_d1_3D_non_uniform
 import mesostat.metric.npeet as npeet_wrapper
 import mesostat.metric.autoregression as autoregression
 import mesostat.metric.sequence as sequence
@@ -45,7 +45,7 @@ class MetricCalculatorNonUniform:
             # FUNCTIONAL CONNECTIVITY
             "corr":                 corr.corr_3D_non_uniform,
             "crosscorr":            corr.cross_corr_non_uniform_3D,
-            "autocorr":             autocorr_trunc_1D,
+            # "autocorr":             autocorr_trunc_1D,
 
             # TEMPORAL METRICS
             "ord_mean":             sequence.temporal_mean_3D_non_uniform,

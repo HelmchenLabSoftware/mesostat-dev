@@ -14,7 +14,7 @@ from mesostat.utils.decorators import redirect_stdout
 
 
 # Determine label used by IDTxl results class
-def get_source_type_label(method):
+def get_source_type_label(method: str):
     if 'TE' in method:
         return 'selected_sources_te'
     elif 'MI' in method:
@@ -24,7 +24,7 @@ def get_source_type_label(method):
 
 
 # Construct an IDTxl analysis class using its name
-def get_analysis_class(methodname):
+def get_analysis_class(methodname: str):
     # Initialise analysis object
     if methodname == "BivariateMI":
         return BivariateMI()
@@ -40,7 +40,7 @@ def get_analysis_class(methodname):
 
 # Convert results structure into set of matrices for better usability
 # Returns shape [3 x nSource] for one given target
-def parse_results_single_target(resultClass, nNode, iTrg, method):
+def parse_results_single_target(resultClass, nNode: int, iTrg: int, method: str):
     # Determine metric name to be extracted
     sourceTypeLabel = get_source_type_label(method)
 
@@ -68,7 +68,7 @@ def parse_results_single_target(resultClass, nNode, iTrg, method):
 
 # Convert results structure into set of matrices for better usability
 # Returns shape [3 x nSource x nTarget]
-def parse_results_network(results, nNode, method):
+def parse_results_network(results, nNode: int, method: str):
     # Determine metric name to be extracted
     sourceTypeLabel = get_source_type_label(method)
 
@@ -87,7 +87,7 @@ def parse_results_network(results, nNode, method):
 # Returns shape [3 x nSource] for one given target. 3 means [FC, lag, p]
 #@jpype_sync_thread
 @redirect_stdout
-def idtxl_single_target(iTrg, method, data, settings):
+def idtxl_single_target(iTrg: int, method: str, data: np.array, settings: dict):
     # Convert data to IDTxl Format
     #dataIDTxl = Data(data, dim_order=settings['dim_order'])
     dataIDTxl = Data(data, dim_order='rps')
@@ -109,7 +109,7 @@ def idtxl_single_target(iTrg, method, data, settings):
 # Returns shape [3 x nSource x nTarget] for one given target. 3 means [FC, lag, p]
 #@jpype_sync_thread
 @redirect_stdout
-def idtxl_network(method, data, settings):
+def idtxl_network(method: str, data: np.array, settings: dict):
     # Convert data to IDTxl Format
     #dataIDTxl = Data(data, dim_order=settings['dim_order'])
     dataIDTxl = Data(data, dim_order='rps')

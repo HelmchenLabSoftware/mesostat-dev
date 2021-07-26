@@ -43,16 +43,19 @@ class SweepGenerator:
                                    a list of its possible values.
 
         Unpacking Conventions:
-            * Output dimensions are always in the order dimOrderTrg, followed by dimensions of single metric output if metric is non-scalar
-            * If timeWindow is used, sample dimension must be provided in dimOrderTrg. The sample sweep will appear in the sample dimension
-            * If settingsIterator is used, the settings dimensions will go immediately after target dimensions in alphabetic order
+            * Output dimensions are always in the order dimOrderTrg, followed by dimensions of single metric output
+              if metric is non-scalar
+            * If timeWindow is used, sample dimension must be provided in dimOrderTrg. The sample sweep will appear in
+              the sample dimension
+            * If settingsIterator is used, the settings dimensions will go immediately after target dimensions in
+              alphabetic order
         '''
+
         self.data = data
         self.dimOrderSrc = dimOrderSrc
         self.dimOrderTrg = dimOrderTrg
         self.timeWindow = timeWindow
         self.settingsSweep = settingsSweep
-
 
         if self.timeWindow is None:
             self.dimOrderTrgPlainSweep = dimOrderTrg
@@ -86,7 +89,6 @@ class SweepGenerator:
             nSample = self.data.shape[idxSampleAxis]
             nSampleWindowed = nSample - self.timeWindow + 1
             self.iterTotalShape = (nSampleWindowed,) + self.iterInternalShape
-
 
     def _plain_iterator(self, data=None):
         '''
@@ -125,7 +127,6 @@ class SweepGenerator:
                     extraSettings = {k : v[iSett] for iSett, (k,v) in zip(iNDSettings, self.settingsSweep.items())}
                     yield dataThis, extraSettings
 
-
     def iterator(self):
         # If time window is not specified, iterate normally over axis
         if self.timeWindow is None:
@@ -137,7 +138,6 @@ class SweepGenerator:
             for dataWindow in winIter.iterator():
                 for it in self._plain_iterator(dataWindow):
                     yield it
-
 
     def unpack(self, rezLst):
         '''
@@ -167,7 +167,6 @@ class SweepGenerator:
             trailingDims = tuple(range(len(self.dimOrderTrg), rezArr.ndim))
 
             return rezArr.transpose(transposedDims + trailingDims)
-
 
     def iterator_dimension_names(self):
         dataDimOrder = list(self.dimOrderTrgPlainSweep)

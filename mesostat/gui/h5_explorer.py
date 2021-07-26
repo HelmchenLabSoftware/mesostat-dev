@@ -4,6 +4,7 @@ import pandas as pd
 
 from mesostat.utils.hdf5_helper import type_of_object
 
+
 class H5Explorer:
     def __init__(self, fname):
         self.fname = fname

@@ -6,7 +6,7 @@ from mesostat.stat.connectomics import offdiag_1D
 
 
 # Test that along a given dimension all shapes are equal
-def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
+def test_uniform_dimension(dataLst: list, dataDimOrder: tuple, dimEqual: str):
     if dimEqual in dataDimOrder:
         idxSample = dataDimOrder.index(dimEqual)
         shapeArr = np.array([d.shape for d in dataLst]).T
@@ -17,7 +17,7 @@ def test_uniform_dimension(dataLst, dataDimOrder, dimEqual):
 # Null hypothesis: Both variables are standard normal variables
 # Problem 1: When evaluating corr matrix, not clear how to Bonferroni-correct, because matrix entries are not independent
 # Problem 2: Frequently the question of interest is comparing two scenarios with non-zero correlation, as opposed to comparing one scenario to 0 baseline
-def corr_significance(cc, nData):
+def corr_significance(cc, nData: int):
     with np.errstate(divide='ignore'):
         t = -np.abs(cc) * np.sqrt((nData - 2) / (1 - cc**2))
         t[t == np.nan] = np.inf
@@ -27,7 +27,7 @@ def corr_significance(cc, nData):
 # Correlation. Requires leading dimension to be channels
 # If y2D not specified, correlation computed between channels of x
 # If y2D is specified, correlation computed for x-x and x-y in a composite matrix
-def corr_2D(x2D, y2D=None, settings=None):
+def corr_2D(x2D: np.array, y2D=None, settings=None):
     est = settings['estimator'] if settings is not None and 'estimator' in settings.keys() else 'corr'
     havePVal = settings['havePVal'] if (settings is not None) and ('havePVal' in settings.keys()) and settings['havePVal'] else False
 
@@ -72,7 +72,7 @@ def corr_2D(x2D, y2D=None, settings=None):
 
 
 # Preprocess time-axis as requested in settings
-def preprocess_3D(dataCanon, settings):
+def preprocess_3D(dataCanon: np.array, settings: dict):
     # Compute time-average if requested, otherwise consider samples as extra trials
     if 'timeAvg' in settings and settings['timeAvg']:
         return np.mean(dataCanon, axis=1)
@@ -80,7 +80,7 @@ def preprocess_3D(dataCanon, settings):
         return numpy_merge_dimensions(dataCanon, 1, 3)
 
 
-def preprocess_3D_non_uniform(dataLst, settings):
+def preprocess_3D_non_uniform(dataLst: list, settings: dict):
     if 'timeAvg' in settings and settings['timeAvg']:
         return np.array([np.mean(x, axis=1) for x in dataLst])
     else:
@@ -88,7 +88,7 @@ def preprocess_3D_non_uniform(dataLst, settings):
 
 
 # If data has trials, concatenate trials into single timeline when computing correlation
-def corr_3D(data, settings):
+def corr_3D(data: np.array, settings: dict):
     # Convert to canonical form
     dataCanon = numpy_transpose_byorder(data, 'rps', 'psr')
     dataFlat = preprocess_3D(dataCanon, settings)
@@ -97,25 +97,24 @@ def corr_3D(data, settings):
 
 
 # Compute average absolute value off-diagonal correlation (synchr. coeff)
-def avg_corr_3D(data, settings):
+def avg_corr_3D(data: np.array, settings: dict):
     M = corr_3D(data, settings)
     return np.nanmean(np.abs(offdiag_1D(M)))
 
 
-def corr_3D_non_uniform(dataLst, settings):
+def corr_3D_non_uniform(dataLst: list, settings: dict):
     dataFlat = preprocess_3D_non_uniform(dataLst, settings)
     return corr_2D(dataFlat, settings=settings)
 
 
-def avg_corr_3D_non_uniform(dataLst, settings):
+def avg_corr_3D_non_uniform(dataLst: list, settings: dict):
     M = corr_3D_non_uniform(dataLst, settings)
     return np.nanmean(np.abs(offdiag_1D(M)))
 
 
-
 # FIXME: Correct all TE-based procedures, to compute cross-correlation as a window sweep externally
 # FIXME: Adapt all TE-based procedures to use 1 lag at a time, or redefine extra procedure to use multiple lags
-def cross_corr_3D(data, settings):
+def cross_corr_3D(data: np.array, settings: dict):
     '''
     Compute cross-correlation of multivariate dataset for a fixed lag
 
@@ -144,7 +143,7 @@ def cross_corr_3D(data, settings):
     return corr_2D(xx, yy, settings=settings)[:nNode, nNode:]
 
 
-def cross_corr_non_uniform_3D(dataLst, settings):
+def cross_corr_non_uniform_3D(dataLst: list, settings: dict):
     '''
     Compute cross-correlation of multivariate dataset for a fixed lag
 
@@ -173,7 +172,7 @@ def cross_corr_non_uniform_3D(dataLst, settings):
 
 
 # Correlation that works if some values in the dataset are NANs
-def corr_nan(x2D):
+def corr_nan(x2D: np.array):
     pass
     # z2D = zscore(x2D, axis=1)
     # nChannel, nData = x2D.shape
