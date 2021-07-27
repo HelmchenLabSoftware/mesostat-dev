@@ -17,9 +17,21 @@ class TestUtilSignalFit(unittest.TestCase):
         dataBin3D = resample.bin_data_1D(data, 3)
         dataBin4D = resample.bin_data_1D(data, 4)
 
-        np.testing.assert_array_equal(dataBin2D, [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
-        np.testing.assert_array_equal(dataBin3D, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
-        np.testing.assert_array_equal(dataBin4D, [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+        rez1 = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+        rez2 = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]
+        rez3 = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
+
+        np.testing.assert_array_equal(dataBin2D, rez1)
+        np.testing.assert_array_equal(dataBin3D, rez2)
+        np.testing.assert_array_equal(dataBin4D, rez3)
+
+        np.testing.assert_array_equal(dataBin2D[::-1], rez1[::-1])
+        np.testing.assert_array_equal(dataBin3D[::-1], rez2[::-1])
+        np.testing.assert_array_equal(dataBin4D[::-1], rez3[::-1])
+
+        # Test large array
+        data = np.random.normal(0, 100, (830560,))
+        resample.bin_data_1D(data, 4)
 
     def test_bin_ND(self):
         nX, nY, nZ = 10, 20, 30

@@ -9,11 +9,13 @@ from mesostat.stat.stat import gaussian
 # For each datapoint, return bin index to which it belongs
 def bin_data_1D(data, nBins):
     boundaries = np.quantile(data, np.linspace(0, 1, nBins + 1))
-    boundaries[0] -= 1.0E-10
-    condLeft = np.array([data <= b for b in boundaries])
-    condRight = np.array([data > b for b in boundaries])
-    condBoth = np.logical_and(condLeft[1:], condRight[:-1])
-    return np.where(condBoth.T)[1]
+    boundaries[-1] += 1.0E-10
+    return np.digitize(data, boundaries, right=False) - 1
+    # boundaries[0] -= 1.0E-10
+    # condLeft = np.array([data <= b for b in boundaries])
+    # condRight = np.array([data > b for b in boundaries])
+    # condBoth = np.logical_and(condLeft[1:], condRight[:-1])
+    # return np.where(condBoth.T)[1]
 
 
 def bin_data(data, nBins, axis=0):
@@ -23,7 +25,7 @@ def bin_data(data, nBins, axis=0):
         dataThis = np.take(data, iAx, axis=axis)
         dataFlat = dataThis.flatten()
         dataBinned = bin_data_1D(dataFlat, nBins)
-        print('zomg', data.shape, dataThis.shape, dataFlat.shape, dataBinned.shape)
+        # print('zomg', data.shape, dataThis.shape, dataFlat.shape, dataBinned.shape)
 
         rezLst += [dataBinned.reshape(dataThis.shape)]
 
