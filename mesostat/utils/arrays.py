@@ -142,11 +142,17 @@ def numpy_merge_dimensions(data, l, r):
 
 
 # Move a dimension from one place to another
+# Example1: [0,1,2,3,4,5], 3, 1 -> [0,3,1,2,4,5]
+# Example2: [0,1,2,3,4,5], 1, 3 -> [0,2,3,1,4,5]
 def numpy_move_dimension(data, axisOld, axisNew):
-    orderOld = list(np.arange(data.ndim))
-    orderTakeOut = orderOld[:axisOld] + orderOld[axisOld+1:]
-    orderNew = orderTakeOut[:axisNew] + [axisOld] + orderTakeOut[axisNew+1:]
-    return data.transpose(orderNew)
+    ord = list(np.arange(data.ndim))
+    if axisOld == axisNew:
+        return data
+    elif axisOld > axisNew:
+        ordNew = ord[:axisNew] + [axisOld] + ord[axisNew:axisOld] + ord[axisOld+1:]
+    else:
+        ordNew = ord[:axisOld] + ord[axisOld+1:axisNew+1] + [axisOld] + ord[axisNew+1:]
+    return data.transpose(ordNew)
 
 
 # Specify exact indices for some axis of the array

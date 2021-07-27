@@ -23,13 +23,12 @@ def bin_data(data, nBins, axis=0):
         dataThis = np.take(data, iAx, axis=axis)
         dataFlat = dataThis.flatten()
         dataBinned = bin_data_1D(dataFlat, nBins)
-
-        print('aaa', dataThis.shape, dataBinned.shape)
-
         rezLst += [dataBinned.reshape(dataThis.shape)]
 
+    rezArr = np.array(rezLst, dtype=int)
+
     # Move the binned dimension back to where it was originally
-    return numpy_move_dimension(np.array(rezLst, dtype=int), 0, axis)
+    return numpy_move_dimension(rezArr, 0, axis)
 
 
 # Downsample uniformly-spaced points by grouping them together and taking averages
