@@ -23,7 +23,7 @@ def bin_data(data, nBins, axis=0):
         dataThis = np.take(data, iAx, axis=axis)
         dataFlat = dataThis.flatten()
         dataBinned = bin_data_1D(dataFlat, nBins)
-        print('zomg', data.shape, dataThis.shape, dataFlat.shape, dataBinned.shape)
+        # print('zomg', data.shape, dataThis.shape, dataFlat.shape, dataBinned.shape)
 
         rezLst += [dataBinned.reshape(dataThis.shape)]
 
