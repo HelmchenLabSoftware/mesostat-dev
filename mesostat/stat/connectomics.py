@@ -2,6 +2,11 @@ import numpy as np
 import networkx as nx
 
 
+############################
+# Matrix manipulation
+############################
+
+
 # Return index of diagonal elements of a square matrix
 def diag_idx(N):
     return np.eye(N, dtype=bool)
@@ -55,6 +60,42 @@ def setDiagU(n, sh, baseline=0):
     return M
 
 
+# Makes square matrix symmetric by copying one of the off-diagonal triangles into another
+def matrix_copy_triangle_symmetric(m, source='U'):
+    if source == 'U':
+        idxL = np.tril_indices(m.shape[0], -1)
+        mNew = m.copy()
+        mNew[idxL] = mNew.T[idxL]
+        return mNew
+    elif source == 'L':
+        idxU = np.triu_indices(m.shape[0], 1)
+        mNew = m.copy()
+        mNew[idxU] = mNew.T[idxU]
+        return mNew
+    else:
+        raise ValueError('Unexpected source', source)
+
+
+# Make square matrix symmetric by reconciling incoming and outgoing links
+def matrix_make_symm(M, either=True):
+    if either:
+        # Assuming undirected link has to be present at least in one direction
+        if M.dtype == bool:
+            return M or M.T
+        else:
+            return np.nanmean([M, M.T], axis=0) # nanmean sets result to NAN only if both are NAN
+    else:
+        # Assuming undirected link has to be present in both directions
+        if M.dtype == bool:
+            return M & M.T
+        else:
+            return np.mean([M, M.T], axis=0)   # Mean sets result to NAN if at least one entry is NAN
+
+
+############################
+# Bridge matrix-graph
+############################
+
 # Given a p-value matrix and a threshold, determine which links are below threshold
 # Any np.nan instances are considered above threshold
 def is_conn(p, pTHR):
@@ -62,6 +103,10 @@ def is_conn(p, pTHR):
     pTMP[np.isnan(p)] = 100  # Set p-value of NAN connections to infinity to exclude them
     return pTMP < pTHR      # Only include connections that are likely (low p-value)
 
+
+############################
+# Connectomics metrics
+############################
 
 # Compute ratio of average off-diagonal to average diagonal elements
 def diagonal_dominance(M):
@@ -107,21 +152,6 @@ def degree_rec(M):
 
 def avg_geom(v):
     return np.prod(v) ** (1 / len(v))
-
-
-def matrix_make_symm(M, either=True):
-    if either:
-        # Assuming undirected link has to be present at least in one direction
-        if M.dtype == bool:
-            return M or M.T
-        else:
-            return np.nanmean([M, M.T], axis=0) # nanmean sets result to NAN only if both are NAN
-    else:
-        # Assuming undirected link has to be present in both directions
-        if M.dtype == bool:
-            return M & M.T
-        else:
-            return np.mean([M, M.T], axis=0)   # Mean sets result to NAN if at least one entry is NAN
 
 
 # Largest Connected Component - A measure for undirected binary graph

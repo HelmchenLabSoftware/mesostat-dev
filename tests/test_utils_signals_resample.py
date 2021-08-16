@@ -53,5 +53,15 @@ class TestUtilSignalFit(unittest.TestCase):
         bin3Dy = resample.bin_data(data3D, nBins=nBins, axis=1)
         bin3Dz = resample.bin_data(data3D, nBins=nBins, axis=2)
 
+    # TODO: Test specific to performance
+    def test_downsample_int(self):
+        nX = 100
+        x = np.arange(nX)
+
+        data = np.random.normal(0, 1, (nX, 10, 20))
+        x2, y2 = resample.downsample_int(x, data, 5)
+
+        assert y2.shape == (20, 10, 20)
+
 
 unittest.main()
