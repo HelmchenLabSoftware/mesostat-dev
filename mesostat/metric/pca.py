@@ -5,6 +5,16 @@ from mesostat.stat.stat import discrete_CDF
 from mesostat.metric.impl.infotheory import entropy_discrete_1D
 
 
+def _numpy_drop_nan_rows(data2D):
+    assert data2D.ndim == 2
+    return data2D[~np.isnan(data2D).any(axis=1)]
+
+
+def _numpy_drop_nan_cols(data2D):
+    assert data2D.ndim == 2
+    return data2D[:, ~np.isnan(data2D).any(axis=0)]
+
+
 # data2D of shape 'ps'
 # Compute how many eigenvalues are necessary to have the total explained variance 'alpha',
 #    if the largest eigenvalues are counted first
@@ -24,20 +34,28 @@ def rank_smooth3D(data3D, settings):
     return rank_smooth2D(np.hstack(data3D), settings)
 
 
-def erank2D(data2D):
+def erank2D(data2D, settings):
     '''
     :param data2D: input data of shape (channels, samples)
     :return: scalar - effective rank
     '''
+    allowBadData = ('allowBadData' in settings) and settings['allowBadData']
 
-    nChannels, nSamples = data2D.shape
+    data2Deff = _numpy_drop_nan_cols(data2D)
+
+    nChannels, nSamples = data2Deff.shape
 
     if nChannels <= 1:
         return 1
     elif nSamples < nChannels:
-        raise ValueError('Attempted to estimate correlation for shape with too few samples', data2D.shape)
+        warningText = 'Attempted to estimate correlation for shape with too few samples ' + str(data2Deff.shape)
+        if allowBadData:
+            print(warningText)
+            return np.nan
+        else:
+            raise ValueError('Attempted to estimate correlation for shape with too few samples', data2Deff.shape)
     else:
-        corr = np.corrcoef(data2D)
+        corr = np.corrcoef(data2Deff)
         eig = np.linalg.eigvals(corr)
         eigNorm = eig / np.sum(eig)
 
@@ -46,4 +64,4 @@ def erank2D(data2D):
 
 # data3D of shape 'rps'
 def erank3D(data, settings):
-    return erank2D(np.hstack(data))
+    return erank2D(np.hstack(data), settings)
