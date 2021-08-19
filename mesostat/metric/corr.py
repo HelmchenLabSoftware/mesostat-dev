@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats
 
 from mesostat.utils.arrays import numpy_merge_dimensions, numpy_transpose_byorder, set_list_shapes, list_assert_get_uniform_shape
-from mesostat.stat.connectomics import offdiag_1D
+from mesostat.utils.matrix import offdiag_1D
 
 
 # Test that along a given dimension all shapes are equal

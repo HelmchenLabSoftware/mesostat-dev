@@ -3,7 +3,7 @@ from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import AffinityPropagation, SpectralClustering, OPTICS, AgglomerativeClustering
 
 from mesostat.visualization.mpl_matrix import imshow
-from mesostat.stat.connectomics import offdiag_1D
+from mesostat.utils.matrix import offdiag_1D
 
 
 def cluster_dist_matrix_min(M, t, method='Agglomerative'):

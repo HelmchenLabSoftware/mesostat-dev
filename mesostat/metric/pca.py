@@ -3,16 +3,7 @@ from sklearn.decomposition import PCA
 
 from mesostat.stat.stat import discrete_CDF
 from mesostat.metric.impl.infotheory import entropy_discrete_1D
-
-
-def _numpy_drop_nan_rows(data2D):
-    assert data2D.ndim == 2
-    return data2D[~np.isnan(data2D).any(axis=1)]
-
-
-def _numpy_drop_nan_cols(data2D):
-    assert data2D.ndim == 2
-    return data2D[:, ~np.isnan(data2D).any(axis=0)]
+from mesostat.utils.matrix import drop_nan_cols
 
 
 # data2D of shape 'ps'
@@ -41,7 +32,7 @@ def erank2D(data2D, settings):
     '''
     allowBadData = ('allowBadData' in settings) and settings['allowBadData']
 
-    data2Deff = _numpy_drop_nan_cols(data2D)
+    data2Deff = drop_nan_cols(data2D)
 
     nChannels, nSamples = data2Deff.shape
 

@@ -52,7 +52,7 @@ def unique_subtract(s1, s2):
 def assert_get_dim_idx(dimOrd, trgDim, label="TASK_NAME", canonical=False):
     if trgDim in dimOrd:
         return dimOrd.index(trgDim)
-    if trgDim not in dimOrd:
+    else:
         if canonical:
             dimNameDict = {
                 "p": "processes (aka channels)",
@@ -97,7 +97,7 @@ def numpy_transpose_byorder(data, orderSrc, orderTrg, augment=False):
         raise ValueError("Incompatible data", data.shape, "and order", orderSrc)
 
     if not augment:
-        if set(orderSrc) != set(orderTrg):
+        if sorted(orderSrc) != sorted(orderTrg):
             raise ValueError('Cannot transform', orderSrc, "to", orderTrg)
         return data.transpose(perm_map_str(orderSrc, orderTrg))
     else:
@@ -168,6 +168,10 @@ def numpy_take_all(a, axes, indices):
 def numpy_nonelist_to_array(lst):
     noneIdxs = np.array([elem is None for elem in lst]).astype(bool)
     if np.all(~noneIdxs):
+        shapes = set_list_shapes(lst, axis=None)
+        if len(shapes) != 1:
+            raise ValueError("List should contain arrays of the same shape, have", shapes)
+
         # All arrays present
         return np.array(lst)
     if np.all(noneIdxs):
@@ -183,7 +187,6 @@ def numpy_nonelist_to_array(lst):
         # Replace all None's with NAN arrays of correct shape
         nonePatch = np.full(trgShape, np.nan)
         return np.array([e if e is not None else nonePatch for e in lst])
-
 
 
 # Assign each string to one key out of provided

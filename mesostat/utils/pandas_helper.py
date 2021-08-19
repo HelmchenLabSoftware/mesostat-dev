@@ -6,15 +6,20 @@ import itertools
 # Search
 ############################
 
-def pd_is_one_row(rows):
-    nRows = rows.shape[0]
+
+def pd_first_row(df):
+    for idx, row in df.iterrows():
+        return idx, row
+
+
+def pd_is_one_row(df):
+    nRows = df.shape[0]
     if nRows == 0:
         return None, None
     elif nRows > 1:
         raise ValueError("Expected 1 match, got", nRows)
 
-    for idx, row in rows.iterrows():
-        return idx, row
+    return pd_first_row(df)
 
 
 def pd_rows_colval(df, colname, val):

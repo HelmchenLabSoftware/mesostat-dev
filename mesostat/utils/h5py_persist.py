@@ -4,7 +4,7 @@ import h5py
 import time
 
 
-class h5wrap:
+class h5persist:
     def __init__(self, fname, mode, waittime=1, nTry=-1, verbose=True):
         '''
         :param fname:     Path to the H5 file
@@ -55,7 +55,7 @@ class h5wrap:
 
 if __name__ == "__main__":
     print("Testing h5py.lock. Try simultaneously on multiple processes to see effect")
-    with h5wrap('test.h5', 'a', waittime=1, verbose=True) as h5w:
+    with h5persist('test.h5', 'a', waittime=1, verbose=True) as h5w:
         if 'catAge' in h5w.f.keys():
             print('Found existing cat', np.array(h5w.f['catAge']))
             del h5w.f['catAge']

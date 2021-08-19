@@ -63,5 +63,24 @@ class TestUtilSignalFit(unittest.TestCase):
 
         assert y2.shape == (20, 10, 20)
 
+    # Test if different wrappers for downsampling do the same thing
+    def test_resample_kernel(self):
+        n1 = 100
+        n2 = 70
+
+        x1 = np.linspace(0, 1, n1)
+        x2 = np.linspace(0, 1, n2)
+        y1 = np.sin(4 * np.pi * x1)
+
+        k1 = resample.resample_kernel(x1, x2)
+        y2k1 = k1.dot(y1)
+
+        k2 = resample.resample_kernel_same_interv(n1, n2)
+        y2k2 = k2.dot(y1)
+
+        y3 = resample.resample(x1, y1, x2, {'method': 'downsample', 'kind': 'kernel'})
+
+        np.testing.assert_array_almost_equal(y3, y2k1)
+        np.testing.assert_array_almost_equal(y3, y2k2)
 
 unittest.main()

@@ -6,7 +6,7 @@ from scipy.ndimage import gaussian_filter
 
 from mesostat.utils.arrays import list_assert_get_uniform_shape, set_list_shapes
 from mesostat.stat.stat import convert_pmf
-from mesostat.stat.connectomics import offdiag_1D
+from mesostat.utils.matrix import offdiag_1D
 from mesostat.stat.moments import discrete_mean_var
 
 
