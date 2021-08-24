@@ -2,7 +2,7 @@ import numpy as np
 from scipy import interpolate
 from sklearn.decomposition import PCA
 
-from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes, numpy_move_dimension
+from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes, numpy_move_dimension, numpy_merge_dimensions
 from mesostat.stat.stat import gaussian
 
 
@@ -31,11 +31,33 @@ def zscore_list(lst):
 
 # Remove first few principal components from data. Returns data in original space (not PCA space)
 def drop_PCA(dataRP, nPCA=1):
-    pca = PCA(n_components=dataRP.shape[1])
-    y = pca.fit_transform(dataRP)
+    nChannel = dataRP.shape[1]
+    pca = PCA(n_components=nChannel)
+    nanIdxs = np.any(np.isnan(dataRP), axis=1)
+    haveNan = np.any(nanIdxs)
+    dataRPeff = dataRP if not haveNan else dataRP[~nanIdxs]
+
+    if len(dataRPeff) <= nChannel:
+        raise ValueError('Data has too few repetitions to estimate PCA', dataRP.shape, 'of those non-nan', dataRPeff.shape)
+
+    y = pca.fit_transform(dataRPeff)
     M = pca.components_
-    y[:, :nPCA] = 0
-    return y.dot(M)
+    y[:, :nPCA] = 0  # Set the first nPCA components to zero in PCA space
+    rez = y.dot(M)  # Map back from PCA space to original space
+
+    if haveNan:
+        rezNan = np.full(dataRP.shape, np.nan)
+        rezNan[~nanIdxs] = rez
+        return rezNan
+    else:
+        return rez
+
+
+# Drop PCA computing it over all samples S and repetitions R. Returned shape same as input
+def drop_PCA_3D(dataRSP, nPCA=1):
+    dataRP = numpy_merge_dimensions(dataRSP, 0, 2)
+    dataRPPCA = drop_PCA(dataRP, nPCA=nPCA)
+    return dataRPPCA.reshape(dataRSP.shape)
 
 
 # Compute discretized exponential decay convolution

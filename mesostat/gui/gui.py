@@ -32,7 +32,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from mesostat.utils.qt_gui_helper import compile_form, qtable_load_from_pandas
 from mesostat.utils.system import getfiles, getfiles_walk
 from mesostat.utils.strings import path_extract_data
-from mesostat.utils.dictionaries import merge_dicts
+from mesostat.utils.dictionaries import merge_dicts_of_lists
 from mesostat.utils.matlab_helper import loadmat
 from mesostat.visualization.mpl_qt import MplPlotLayout
 from mesostat.visualization.embeddings import plot_pca
@@ -223,7 +223,7 @@ class MesostatGUI():
         if fnameTemplate == '':
             df = pd.DataFrame({'fpaths' : filepaths})
         else:
-            df = pd.DataFrame(merge_dicts([path_extract_data(s, fnameTemplate) for s in filepaths]))
+            df = pd.DataFrame(merge_dicts_of_lists([path_extract_data(s, fnameTemplate) for s in filepaths]))
 
         ################################
         # Read data

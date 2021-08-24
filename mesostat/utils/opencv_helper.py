@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 class cvWriter:
     # Define the codec and create VideoWriter object
     

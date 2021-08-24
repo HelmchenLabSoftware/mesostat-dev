@@ -38,12 +38,12 @@ def pairwise_differences(data1D):
     return dataExtrudeX - dataExtrudeX.T
 
 
-# Construct a matrix where some upper off-diagonal is filled with ones
-def setDiagU(n, sh, baseline=0):
-    M = np.full((n, n), baseline)
-    for i in range(n-sh):
-        M[i + sh, i] = 1
-    return M
+# # Construct a matrix where some upper off-diagonal is filled with ones
+# def setDiagU(n, sh, baseline=0):
+#     M = np.full((n, n), baseline)
+#     for i in range(n-sh):
+#         M[i + sh, i] = 1
+#     return M
 
 
 ##########################

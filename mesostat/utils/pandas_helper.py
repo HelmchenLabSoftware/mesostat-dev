@@ -31,6 +31,7 @@ def pd_rows_colval(df, colname, val):
 # TODO: Implement partial matches
 # TODO: Implement inequalities
 def pd_query(df, queryDict, dropQuery=False):
+    assert isinstance(queryDict, dict)
     if len(queryDict) == 0:
         return df
     elif len(df) == 0:
