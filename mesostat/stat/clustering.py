@@ -37,7 +37,7 @@ def cluster_dist_matrix_max(M, t, method='Affinity'):
     Below algorithms maximize distance between points within the cluster
     '''
     if method == 'Affinity':
-        rez = AffinityPropagation(affinity='precomputed', damping=0.5).fit(M).labels_
+        rez = AffinityPropagation(affinity='precomputed', damping=t).fit(M).labels_
     else:
         raise ValueError("Unknown method", method)
 
