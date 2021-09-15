@@ -13,6 +13,22 @@ def slice_sorted(data, rng):
         bisect.bisect_right(data, rng[1])]
 
 
+# Take a list of strings, return a unique list of strings of the same length
+# Non-unique strings will be appended their index at the end
+# It is guaranteed that index increments with position in the list
+def string_list_pad_unique(data1D, suffix=''):
+    d = {}
+    rez = []
+    for elem in data1D:
+        if elem not in d.keys():
+            d[elem] = 0
+            rez += [elem]
+        else:
+            d[elem] += 1
+            rez += [elem + suffix + str(d[elem])]
+    return rez
+
+
 ########################################
 # Permutation operations
 ########################################
