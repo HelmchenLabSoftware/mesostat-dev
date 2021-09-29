@@ -17,12 +17,18 @@ def _parse_event_df(dfTrial, timestampGlobal, iTrial):
     return pd.DataFrame({**{'Trial': iTrial, 'Time': timestampTrialSeconds}, **rowsDict}, index=[0])
 
 
-# Read labview file of structure ['Date', 'Time', 'Trial', 'Event']
-# Convert each trial into row of dataframe
-# For each row, return trial index and time in seconds since start of a session
-# For each event in a row, return time since start of the trial, or NaN if event did not occur
-#
 def labview_parse_log_as_pandas(pwd, sep='\t', endEvent=None):
+    '''
+    :param pwd:      Path to labview file (csv format)
+    :param sep:      Separator
+    :param endEvent: If none, trials separated by trial index, otherwise by end event ignoring trial index
+    :return:         Pandas dataframe of labview file, preprocessed
+
+    Read labview file of structure ['Date', 'Time', 'Trial', 'Event']
+    Convert each trial into row of dataframe
+    For each row, return trial index and time in seconds since start of a session
+    For each event in a row, return time since start of the trial, or NaN if event did not occur
+    '''
     dfRAW = pd.read_csv(pwd, sep=sep)
 
     if list(dfRAW.columns) != ['Date', 'Time', 'Trial', 'Event']:
