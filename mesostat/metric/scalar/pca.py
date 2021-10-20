@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 from mesostat.stat.stat import discrete_CDF
-from mesostat.metric.impl.infotheory import entropy_discrete_1D
+from mesostat.metric.infotheory.infotheory import entropy_discrete_1D
 from mesostat.utils.matrix import drop_nan_cols
 
 

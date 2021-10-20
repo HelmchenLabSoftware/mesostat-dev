@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from mesostat.metric.idtxl_pid import bivariate_pid_3D
+from mesostat.metric.dim3d.idtxl_pid import bivariate_pid_3D
 from itertools import permutations
 
 

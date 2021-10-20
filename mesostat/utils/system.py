@@ -2,6 +2,7 @@ import os, sys, psutil
 import numpy as np
 from time import gmtime, strftime
 from datetime import datetime
+from pathlib import Path
 
 
 # Convert a list of string integers to a date. The integers correspond to ["YYYY", "MM", "DD"] - Others have not been tested
@@ -44,6 +45,12 @@ def progress_bar(i, imax, suffix=None):
     if i == imax:
         sys.stdout.write("\n")
     sys.stdout.flush()
+
+
+
+
+def make_path(path, parents=True, exist_ok=True):
+    Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
 
 # Find all folders in this folder (excluding subdirectories)

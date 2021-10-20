@@ -1,13 +1,13 @@
 import numpy as np
 
 from mesostat.stat.stat import mu_std
-import mesostat.metric.corr as corr
-from mesostat.metric.autocorr import autocorr_d1_3D_non_uniform
-import mesostat.metric.npeet as npeet_wrapper
-import mesostat.metric.autoregression as autoregression
-import mesostat.metric.sequence as sequence
-import mesostat.metric.stretch as stretch
-import mesostat.metric.pca as pca
+import mesostat.metric.dim2d.corr as corr
+from mesostat.metric.dim1d.autocorr import autocorr_d1_3D_non_uniform
+import mesostat.metric.infotheory.npeet as npeet_wrapper
+import mesostat.metric.scalar.autoregression as autoregression
+import mesostat.metric.temporal.sequence as sequence
+import mesostat.metric.temporal.stretch as stretch
+import mesostat.metric.scalar.pca as pca
 
 from mesostat.utils.arrays import set_list_shapes
 from mesostat.utils.iterators.sweep import SweepGeneratorNonUniform

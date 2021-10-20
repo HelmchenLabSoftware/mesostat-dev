@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import mesostat.metric.autocorr as ac
+import mesostat.metric.dim1d.autocorr as ac
 
 
 class TestMetricAutocorr(unittest.TestCase):

@@ -2,16 +2,16 @@ import numpy as np
 
 from mesostat.utils.arrays import numpy_transpose_byorder
 from mesostat.utils.signals.filter import zscore_dim_ord
-from mesostat.metric.corr import corr_3D, cross_corr_3D, avg_corr_3D
-from mesostat.metric.autocorr import autocorr_3D, autocorr_d1_3D
-import mesostat.metric.npeet as npeet
-import mesostat.metric.autoregression as autoregression
-from mesostat.metric.stretch import stretch_basis_projection
-import mesostat.metric.moment as moment
-import mesostat.metric.sequence as sequence
-import mesostat.metric.pca as pca
-from mesostat.metric.idtxl_te import idtxl_single_target, idtxl_network
-import mesostat.metric.idtxl_pid as pid
+from mesostat.metric.dim2d.corr import corr_3D, cross_corr_3D, avg_corr_3D
+from mesostat.metric.dim1d.autocorr import autocorr_3D, autocorr_d1_3D
+import mesostat.metric.infotheory.npeet as npeet
+import mesostat.metric.scalar.autoregression as autoregression
+from mesostat.metric.temporal.stretch import stretch_basis_projection
+import mesostat.metric.scalar.moment as moment
+import mesostat.metric.temporal.sequence as sequence
+import mesostat.metric.scalar.pca as pca
+from mesostat.metric.dim3d.idtxl_te import idtxl_single_target, idtxl_network
+import mesostat.metric.dim3d.idtxl_pid as pid
 
 from mesostat.utils.iterators.sweep import SweepGenerator
 from mesostat.utils.parallel import GenericMapper

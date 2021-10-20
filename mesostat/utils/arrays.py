@@ -47,6 +47,13 @@ def perm_map_str(a, b):
 # Set operations
 ########################################
 
+
+# Returns a list only containing unique items
+# Unlike Set(), order of unique items from the original list is preserved
+def unique_ordered(lst):
+    return list(dict.fromkeys(lst))
+
+
 # Returns set subtraction of s1 - s2, preserving order of s1
 def unique_subtract(s1, s2):
     rez = [s for s in s1 if s not in s2]

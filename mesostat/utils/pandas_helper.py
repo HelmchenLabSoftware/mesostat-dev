@@ -126,6 +126,9 @@ def merge_df_from_dict(dfDict, columnNames):
 
     rezDFList = []
     for k, v in dfDict.items():
+        if isinstance(k, str):
+            k = [k]
+
         dfCopy = v.copy()
         # Iterate in reverse order because we will be inserting each column at the beginning
         for colname, colval in zip(columnNames[::-1], k[::-1]):
