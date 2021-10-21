@@ -7,7 +7,7 @@ def _residual_linear_fit(x, cov):
     return x - coeffX.dot(cov)
 
 
-def _relative_explained_variance(trg, srcLst):
+def r2(trg, srcLst):
     return 1 - np.var(_residual_linear_fit(trg, np.array(srcLst))) / np.var(trg)
 
 
@@ -25,16 +25,20 @@ def quadratic_triplet_decomp_1D(src1, src2, trg):
     cTrg = trg - np.mean(trg)
     c12 = c1 * c2
 
-    # Fit, compute ExpVariduals and related variances
-    rev1 = _relative_explained_variance(cTrg, [c1])
-    rev2 = _relative_explained_variance(cTrg, [c2])
-    rev12 = _relative_explained_variance(cTrg, [c1, c2])
-    rev12sq = _relative_explained_variance(cTrg, [c1, c2, c12])
+    # # Fit, compute ExpVariduals and related variances
+    rev1 = r2(cTrg, [c1])
+    rev2 = r2(cTrg, [c2])
+
+    revFull = r2(cTrg, [c1, c2, c12])
+    revM1   = r2(cTrg, [c2, c12])
+    revM2   = r2(cTrg, [c1, c12])
+    revM12  = r2(cTrg, [c1, c2])
 
     # Compute individual effects
-    red12 = rev1 + rev2 - rev12
-    unq1 = rev1 - red12
-    unq2 = rev2 - red12
-    syn12 = rev12sq - rev12
+    unq1 = revFull - revM1
+    unq2 = revFull - revM2
+    syn12 = revFull - revM12
+    # red12 = revFull - unq1 - unq2 - syn12
+    red12 = rev1 + rev2 - revM12
 
     return [unq1, unq2, red12, syn12]

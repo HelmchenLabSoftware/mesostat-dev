@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/alyosha/work/git/mesostat-dev/mesostat/gui/importh5.ui'
+# Form implementation generated from reading ui file '/media/aleksejs/DataHDD/work/codes/comp-neuro/analysis-mesoscopic/mesostat-dev/mesostat/gui/importh5.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.0
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_importH5Dialog(object):
     def setupUi(self, importH5Dialog):
@@ -59,3 +57,4 @@ class Ui_importH5Dialog(object):
         self.parseLabelCheckBox.setText(_translate("importH5Dialog", "Parse label"))
         self.cancelPushButton.setText(_translate("importH5Dialog", "Cancel"))
         self.okPushButton.setText(_translate("importH5Dialog", "Ok"))
+

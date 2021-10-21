@@ -1,9 +1,9 @@
 import numpy as np
-from scipy import interpolate
+# from scipy import interpolate
 from sklearn.decomposition import PCA
 
-from mesostat.utils.arrays import slice_sorted, numpy_shape_reduced_axes, numpy_move_dimension, numpy_merge_dimensions
-from mesostat.stat.stat import gaussian
+from mesostat.utils.arrays import numpy_shape_reduced_axes, numpy_merge_dimensions
+# from mesostat.stat.stat import gaussian
 
 
 def zscore(x, axis=None):
