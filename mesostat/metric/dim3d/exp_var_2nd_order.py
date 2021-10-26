@@ -41,4 +41,4 @@ def quadratic_triplet_decomp_1D(src1, src2, trg):
     # red12 = revFull - unq1 - unq2 - syn12
     red12 = rev1 + rev2 - revM12
 
-    return [unq1, unq2, red12, syn12]
+    return np.clip([unq1, unq2, red12, syn12], 0, None)  # Clip negative entries as they are meaningless
