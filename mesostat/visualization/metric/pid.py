@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mesostat.visualization.mpl_colors import base_colors_rgb
 
 
 # Convert degrees to radians
@@ -37,12 +38,10 @@ def _sh_line_points(p1, p2, phi, sh):
     return [p1sh[0], p2sh[0]], [p1sh[1], p2sh[1]]
 
 
-def sketch_pid(ax, u1, u2, red, syn,
+def sketch_pid(ax, pidDict, colorsDict=None,
                radiusMacro=3, radiusCircle=1, colorCircle='lightgray', maxLineWidth=15,
-               colorU1='blue', colorU2='yellow', colorRed='green', colorSyn='red',
                rotation=90, fontsize=30):
     '''
-
     :param ax:              Plot axis
     :param u1:              Unique information, source X. Allowed values between [0, 1], please rescale
     :param u2:              Unique information, source Y. Allowed values between [0, 1], please rescale
@@ -60,6 +59,16 @@ def sketch_pid(ax, u1, u2, red, syn,
     :param fontsize:        Font size for source and target labels
     :return:
     '''
+
+
+    if colorsDict is None:
+        tableauColors = base_colors_rgb(key='tableau')
+        colorsDict = {
+            'unq_s1'    : tableauColors[0],
+            'unq_s2'    : tableauColors[1],
+            'shd_s1_s2' : tableauColors[2],
+            'syn_s1_s2' : tableauColors[3]
+        }
 
     # Center plot at origin
     p0 = np.array([0, 0])
@@ -86,19 +95,19 @@ def sketch_pid(ax, u1, u2, red, syn,
     # Construct and annotate Unique and Redundant
     ##################################
 
-    linewidthU1  = u1 * maxLineWidth
-    linewidthU2  = u2 * maxLineWidth
-    linewidthRed = red * maxLineWidth
+    linewidthU1  = maxLineWidth * pidDict['unq_s1']
+    linewidthU2  = maxLineWidth * pidDict['unq_s2']
+    linewidthRed = maxLineWidth * pidDict['shd_s1_s2']
 
     lpUnqXZ = _sh_line_points(pX, pZ, _deg2rad(90), radiusCircle / 2)
     lpUnqYZ = _sh_line_points(pY, pZ, _deg2rad(-90), radiusCircle / 2)
     lpRedXZ = _sh_line_points(pX, pZ, _deg2rad(-90), 0)
     lpRedYZ = _sh_line_points(pY, pZ, _deg2rad(90), 0)
 
-    lineUnqXZ = plt.Line2D(*lpUnqXZ, color=colorU1, linewidth=linewidthU1, zorder=1)
-    lineUnqYZ = plt.Line2D(*lpUnqYZ, color=colorU2, linewidth=linewidthU2, zorder=1)
-    lineRedXZ = plt.Line2D(*lpRedXZ, color=colorRed, linewidth=linewidthRed, zorder=1)
-    lineRedYZ = plt.Line2D(*lpRedYZ, color=colorRed, linewidth=linewidthRed, zorder=1)
+    lineUnqXZ = plt.Line2D(*lpUnqXZ, color=colorsDict['unq_s1'], linewidth=linewidthU1, zorder=1)
+    lineUnqYZ = plt.Line2D(*lpUnqYZ, color=colorsDict['unq_s2'], linewidth=linewidthU2, zorder=1)
+    lineRedXZ = plt.Line2D(*lpRedXZ, color=colorsDict['shd_s1_s2'], linewidth=linewidthRed, zorder=1)
+    lineRedYZ = plt.Line2D(*lpRedYZ, color=colorsDict['shd_s1_s2'], linewidth=linewidthRed, zorder=1)
 
     ax.add_line(lineUnqXZ)
     ax.add_line(lineUnqYZ)
@@ -110,10 +119,10 @@ def sketch_pid(ax, u1, u2, red, syn,
     # Construct and annotate Synergy
     ##################################
 
-    radiusSynergy = (radiusMacro - radiusCircle) * syn
+    radiusSynergy = (radiusMacro - radiusCircle) * pidDict['syn_s1_s2']
     pZsyn, pXsyn, pYsyn = _uni_triangle_points(p0, radiusSynergy, rotation)
 
-    triangleSyn = plt.Polygon(np.array([pXsyn, pYsyn, pZsyn]), color=colorSyn)
+    triangleSyn = plt.Polygon(np.array([pXsyn, pYsyn, pZsyn]), color=colorsDict['syn_s1_s2'])
     ax.add_patch(triangleSyn)
 
 
@@ -124,9 +133,3 @@ def sketch_pid(ax, u1, u2, red, syn,
     ax.axis('off')
     ax.set_aspect('equal')
     ax.autoscale_view()
-
-
-fig, ax = plt.subplots()
-sketch_pid(ax, 0,0,0,1)
-
-plt.show()

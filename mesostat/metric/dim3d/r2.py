@@ -11,12 +11,15 @@ def r2(trg, srcLst):
     return 1 - np.var(_residual_linear_fit(trg, np.array(srcLst))) / np.var(trg)
 
 
-def quadratic_triplet_decomp_1D(src1, src2, trg):
+def pr2_quadratic_triplet_decomp_1D(src1, src2, trg):
     '''
     :param src1:  First source channel, 1D array of floats
     :param src2:  Second source channel, 1D array of floats
     :param trg:   Target channel, 1D array of floats
     :return:      4 relative explained variances: unique source 1, unique source 2, redundant, synergistic
+
+    Partial R^2-based decomposition of triplet correlations onto unique, redundant and synergistic parts
+    Unique and redundant terms are purely linear, synergistic term is quadratic.
     '''
 
     # Compute first two centered moments
