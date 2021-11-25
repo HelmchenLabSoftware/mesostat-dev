@@ -12,6 +12,8 @@ import mesostat.metric.temporal.sequence as sequence
 import mesostat.metric.scalar.pca as pca
 from mesostat.metric.dim3d.idtxl_te import idtxl_single_target, idtxl_network
 import mesostat.metric.dim3d.idtxl_pid as pid
+import mesostat.metric.dim3d.r2 as r2
+import mesostat.metric.dim3d.partialcorr as pcorr
 
 from mesostat.utils.iterators.sweep import SweepGenerator
 from mesostat.utils.parallel import GenericMapper
@@ -65,7 +67,7 @@ class MetricCalculator:
             "rank_smooth":          pca.rank_smooth3D,
             "rank_effective":       pca.erank3D,
 
-            # FUNCTIONAL CONNECTIVITY METRICS
+            # PAIRWISE METRICS
             "corr":                 corr_3D,
             "crosscorr":            cross_corr_3D,
             "cross_MI":             npeet.cross_mi_3D,
@@ -73,8 +75,15 @@ class MetricCalculator:
             "BivariateTE":          lambda data, settings: self._TE("BivariateTE", data, settings),
             "MultivariateMI":       lambda data, settings: self._TE("MultivariateMI", data, settings),
             "MultivariateTE":       lambda data, settings: self._TE("MultivariateTE", data, settings),
+
+            # TRIPLET METRICS
+            "PCorr":                pcorr.partial_corr_3D,
+            "PR2":                  r2.pr2_quadratic_triplet_decomp_3D,
             "BivariatePID3D":       pid.bivariate_pid_3D,
             "MultivariatePID3D":    pid.multivariate_pid_3D,
+
+
+            # QUADRUPLET METRICS
             "MultivariatePID4D":    pid.multivariate_pid_4D,
 
             # TEMPORAL METRICS

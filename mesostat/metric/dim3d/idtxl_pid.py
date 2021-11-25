@@ -4,29 +4,7 @@ from idtxl.multivariate_pid import MultivariatePID
 from idtxl.data import Data
 
 from mesostat.utils.decorators import redirect_stdout
-
-
-def _parse_channels(settings: dict, dim: int):
-    if 'channels' in settings.keys():
-        assert len(settings['channels']) == dim
-        src = settings['channels'][:-1]
-        trg = settings['channels'][-1]
-    else:
-        src = settings['src']
-        trg = settings['trg']
-    return [int(s) for s in src], int(trg)
-
-
-def _shuffle_target(dataRPS: np.array, trg: int, settings: dict):
-    if 'shuffle' in settings and settings['shuffle']:
-        dataEff = np.copy(dataRPS)
-        dataTrg2D = dataEff[:, trg]
-        dataTrg1D = dataTrg2D.flatten()
-        np.random.shuffle(dataTrg1D)
-        dataEff[:, trg] = dataTrg1D.reshape(dataTrg2D.shape)
-        return dataEff
-    else:
-        return dataRPS
+from mesostat.metric.dim3d.common import shuffle_target, parse_channels
 
 
 def bivariate_pid_key():
@@ -75,21 +53,24 @@ def multivariate_pid_key(dim: int):
 
 @redirect_stdout
 def bivariate_pid_3D(data: np.array, settings: dict):
-    src, trg = _parse_channels(settings, dim=3)
-    dataEff = _shuffle_target(data, trg, settings)
+    src, trg = parse_channels(settings, dim=3)
+    dataEff = shuffle_target(data, trg, settings)
 
     dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = BivariatePID()
 
-    rez = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
+    rezIDTxl = pid.analyse_single_target(settings=settings['settings_estimator'], data=dataIDTxl, target=trg, sources=src)
+    rez = np.array([rezIDTxl.get_single_target(trg)[k] for k in bivariate_pid_key()])
 
-    return np.array([rez.get_single_target(trg)[k] for k in bivariate_pid_key()])
+    # Getting rid of negative and very low positive PID's.
+    # Statistical tests behave unexplectedly - perhaps low values contaminated by roundoff errors?
+    return np.clip(rez, 1.0E-6, None)
 
 
 @redirect_stdout
 def multivariate_pid_3D(data: np.array, settings: dict):
-    src, trg = _parse_channels(settings, dim=3)
-    dataEff = _shuffle_target(data, trg, settings)
+    src, trg = parse_channels(settings, dim=3)
+    dataEff = shuffle_target(data, trg, settings)
 
     dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = MultivariatePID()
@@ -101,8 +82,8 @@ def multivariate_pid_3D(data: np.array, settings: dict):
 
 @redirect_stdout
 def multivariate_pid_4D(data: np.array, settings: dict):
-    src, trg = _parse_channels(settings, dim=4)
-    dataEff = _shuffle_target(data, trg, settings)
+    src, trg = parse_channels(settings, dim=4)
+    dataEff = shuffle_target(data, trg, settings)
 
     dataIDTxl = Data(dataEff, dim_order='rps', normalise=False)
     pid = MultivariatePID()
