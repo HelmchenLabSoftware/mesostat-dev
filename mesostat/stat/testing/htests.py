@@ -73,27 +73,59 @@ def wilcoxon_nan_aware(data1, data2):
     return logPval, [nNoNan, nNoNan]
 
 
-def classification_accuracy_weighted(a, b):
+# def classification_accuracy_weighted(a, b):
+#     '''
+#     Computes best accuracy of classifying between scalar variables using a separating line
+#     Compensates for disbalances in samples - aims to recover separability of equal classes
+#
+#     :param a: 1D numpy array of floats
+#     :param b: 1D numpy array of floats
+#     :return: scalar measure of accuracy in percent
+#     '''
+#
+#     aEff = a[~np.isnan(a)]
+#     bEff = b[~np.isnan(b)]
+#
+#     Na = len(aEff)
+#     Nb = len(bEff)
+#     assert (Na > 0) and (Nb > 0)
+#
+#     x = np.hstack([aEff, bEff])[:, None]
+#     y = [0] * Na + [1] * Nb
+#     w = [Nb] * Na + [Na] * Nb
+#     clf = svm.SVC()
+#     clf.fit(x, y, sample_weight=w)
+#     yHat = clf.predict(x)
+#     return accuracy_score(y, yHat)
+
+
+def classification_accuracy_weighted(xArr, yArr, alternative='greater'):
     '''
     Computes best accuracy of classifying between scalar variables using a separating line
     Compensates for disbalances in samples - aims to recover separability of equal classes
 
-    :param a: 1D numpy array of floats
-    :param b: 1D numpy array of floats
+    :param xArr: 1D numpy array of floats
+    :param yArr: 1D numpy array of floats
     :return: scalar measure of accuracy in percent
     '''
 
-    aEff = a[~np.isnan(a)]
-    bEff = b[~np.isnan(b)]
+    if alternative == 'greater':
+        xEff = xArr[~np.isnan(xArr)]
+        yEff = yArr[~np.isnan(yArr)]
 
-    Na = len(aEff)
-    Nb = len(bEff)
-    assert (Na > 0) and (Nb > 0)
+        nX = len(xEff)
+        nY = len(yEff)
+        assert (nX > 0) and (nY > 0)
 
-    x = np.hstack([aEff, bEff])[:, None]
-    y = [0] * Na + [1] * Nb
-    w = [Nb] * Na + [Na] * Nb
-    clf = svm.SVC()
-    clf.fit(x, y, sample_weight=w)
-    yHat = clf.predict(x)
-    return accuracy_score(y, yHat)
+        # xEffRange = set(xEff[xEff <= np.max(yEff)])
+        # if len(xEffRange) == 0:
+        #     return 0
+
+        acc = [(np.sum(xArr >= t) / nX + np.sum(yEff < t) / nY) / 2 for t in xEff]
+        return np.max(acc)
+    if alternative == 'lesser':
+        return classification_accuracy_weighted(yArr, xArr, alternative='greater')
+    elif alternative == 'two-sided':
+        acc1 = classification_accuracy_weighted(xArr, yArr, alternative='greater')
+        acc2 = classification_accuracy_weighted(yArr, xArr, alternative='greater')
+        return max(acc1, acc2)
