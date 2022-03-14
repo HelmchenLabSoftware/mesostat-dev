@@ -72,6 +72,7 @@ def plot_matrix(data, shape, xlabels=None, ylabels=None, plottitles=None, lims=N
 
 
 def plot_df_2D_outer_product(ax, df, colNamesRow, colNamesCol, colNameTrg, vmin=None, vmax=None, orderDict=None, dropEmpty=False):
+    _row_to_string = lambda row: '_'.join([str(el) for el in list(row)])
 
     def _drop_empty_queries(df, dfQueries):
         idxs = [idx for idx, row in dfQueries.iterrows() if len(pd_query(df, dict(row))) == 0]
@@ -94,8 +95,8 @@ def plot_df_2D_outer_product(ax, df, colNamesRow, colNamesCol, colNameTrg, vmin=
         dfOuterRow = _drop_empty_queries(df, dfOuterRow)
         dfOuterCol = _drop_empty_queries(df, dfOuterCol)
 
-    colLabelsRow = ['_'.join(list(row)) for idx, row in dfOuterRow.iterrows()]
-    colLabelsCol = ['_'.join(list(row)) for idx, row in dfOuterCol.iterrows()]
+    colLabelsRow = [_row_to_string(row) for idx, row in dfOuterRow.iterrows()]
+    colLabelsCol = [_row_to_string(row) for idx, row in dfOuterCol.iterrows()]
 
     # Assemble 2D matrix of all results
     rezArr = np.zeros((len(colLabelsRow), len(colLabelsCol)))
