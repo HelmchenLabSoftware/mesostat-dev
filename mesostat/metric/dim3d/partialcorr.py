@@ -13,9 +13,13 @@ TODO:
 
 
 def partial_corr(x, y, covar, eta=1.0E-6):
-    xFit = residual_linear_fit(x, covar)
-    yFit = residual_linear_fit(y, covar)
+    # Subtract means from all variables, effectively accounting for fitting a constant
+    xMu = x - np.mean(x)
+    yMu = y - np.mean(y)
+    covarMu = covar - np.mean(covar, axis=1)
 
+    xFit = residual_linear_fit(xMu, covarMu)
+    yFit = residual_linear_fit(yMu, covarMu)
 
     # If covariate explains one or both of the variables perfectly or almost perfectly,
     #   then residual may be either zero or dominated by numerical errors that need not be random.
