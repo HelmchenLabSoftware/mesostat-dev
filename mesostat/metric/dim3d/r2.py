@@ -25,23 +25,30 @@ def pr2_quadratic_triplet_decomp_1D(dataSrc1, dataSrc2, dataTrg):
     cTrg = dataTrg - np.mean(dataTrg)
     c12 = c1 * c2
 
-    # # Fit, compute ExpVariduals and related variances
-    rev1 = r2(cTrg, [c1])
-    rev2 = r2(cTrg, [c2])
+    # Fit, compute ExpVariduals and related variances
+    rev1 = np.clip(r2(cTrg, [c1]), 0, None)
+    rev2 = np.clip(r2(cTrg, [c2]), 0, None)
 
-    revFull = r2(cTrg, [c1, c2, c12])
-    revM1   = r2(cTrg, [c2, c12])
-    revM2   = r2(cTrg, [c1, c12])
-    revM12  = r2(cTrg, [c1, c2])
+    revFull = np.clip(r2(cTrg, [c1, c2, c12]), 0, None)
+    revM1   = np.clip(r2(cTrg, [c2, c12]), 0, None)
+    revM2   = np.clip(r2(cTrg, [c1, c12]), 0, None)
+    revM12  = np.clip(r2(cTrg, [c1, c2]), 0, None)
 
     # Compute individual effects
-    unq1 = revFull - revM1
-    unq2 = revFull - revM2
-    syn12 = revFull - revM12
-    # red12 = revFull - unq1 - unq2 - syn12
-    red12 = rev1 + rev2 - revM12
+    # Clip negative entries as they are meaningless
+    unq1 = np.clip(revFull - revM1, 0, None)
+    unq2 = np.clip(revFull - revM2, 0, None)
+    syn12 = np.clip(revFull - revM12, 0, None)
+    # red12 = np.clip(revFull - unq1 - unq2 - syn12, 0, None)
 
-    return np.clip([unq1, unq2, red12, syn12], 0, None)  # Clip negative entries as they are meaningless
+    # unq1 = revM12 - rev2
+    # unq2 = revM12 - rev1
+    red12 = np.clip(rev1 + rev2 - revM12, 0, None)
+
+    # print(revFull, revM1, revM2, revM12)
+    # print(revM12, rev1, rev2)
+
+    return np.array([unq1, unq2, red12, syn12])
 
 
 def pr2_quadratic_triplet_decomp_3D(dataRPS: np.array, settings: dict):
