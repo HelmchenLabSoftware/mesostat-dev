@@ -37,7 +37,11 @@ def partial_corr(x, y, covar, eta=1.0E-6):
     if np.isnan(rez):
         raise ValueError("Sth Went wrong")
 
-    return np.clip(rez, eta, None)  # Crop very small values
+    # Crop very small values, but allow for negative partial correlation
+    if np.abs(rez) > eta:
+        return rez
+    else:
+        return eta
 
 
 def partial_corr_3D(dataRPS: np.array, settings: dict):
