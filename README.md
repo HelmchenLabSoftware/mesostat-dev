@@ -5,7 +5,8 @@ Mesostat is an open-source library of metrics and statistical tools for analysis
 ## Dependencies
 ### Pip Dependencies
 
-IPython PyQt5 colorsys cv2 h5py ipywidgets json matplotlib multiprocessing networkx numpy pandas pathlib pathos patsy psutil scipy seaborn setuptools shutil sklearn statannot subprocess unittest
+* This library uses python 3.8.
+* Note the pip dependencies in requirements.txt file
 
 ### External dependencies
 
