@@ -83,7 +83,8 @@ def pd_append_row(df, lst, skip_repeat=False):
             return df
     else:
         newRow = pd.DataFrame([lst], columns=df.columns)
-        return df.append(newRow, ignore_index=True)
+        # return df.append(newRow, ignore_index=True)
+        return pd.concat([df, newRow], ignore_index=True)
 
 
 # Appends all dataframes in a list
@@ -93,7 +94,8 @@ def pd_vstack_df(dfLst, colName, colVals):
     for df, val in zip(dfLst, colVals):
         df1 = df.copy()
         df1[colName] = val
-        rez = rez.append(df1)
+        # rez = rez.append(df1)
+        rez = pd.concat([rez, df1])
     return rez.reset_index()
 
 
@@ -199,7 +201,8 @@ def pd_category_to_column(df, catName, rezName):
     for catVal in categories:
         dfThis = df[df[catName] == catVal]
         dfThis.rename(columns={rezName: catVal}, inplace=True)
-        rez = rez.append(dfThis)
+        # rez = rez.append(dfThis)
+        rez = pd.concat([rez, dfThis])
     return rez.reset_index()
 
 
