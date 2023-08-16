@@ -15,4 +15,3 @@ seaborn
 setuptools
 scikit-learn
 statannot
-unittest
